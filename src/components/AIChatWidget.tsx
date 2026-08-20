@@ -65,11 +65,11 @@ export const AIChatWidget: React.FC = () => {
       }
 
       const listStr = recentProducts
-        .map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)} (${p.condition || 'Stock Available'})`)
+        .map((p: Product) => `• ${p.name} — ${formatPrice(p.price)} (${p.condition || 'Stock Available'})`)
         .join('\n');
 
       return {
-        reply: `Here are our **latest arrivals & recent uploads** directly from our shelves:\n\n${listStr}\n\nTap any item below to see specs or add it to your cart:`,
+        reply: `Here are our latest arrivals & recent uploads directly from our shelves:\n\n${listStr}\n\nTap any item below to see specs or add it to your cart:`,
         quickActions: recentProducts.map((p: Product) => ({
           label: `${p.name.slice(0, 18)}...`,
           action: () => {
@@ -91,7 +91,7 @@ export const AIChatWidget: React.FC = () => {
 
       if (budgetItems.length > 0) {
         const itemsList = budgetItems
-          .map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`)
+          .map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`)
           .join('\n');
         return {
           reply: `Here is what we have in stock within your budget (under ${formatPrice(limit)}):\n\n${itemsList}`,
@@ -116,7 +116,7 @@ export const AIChatWidget: React.FC = () => {
 
     if (q.includes('who are you') || q.includes('your name') || q.includes('cisco')) {
       return {
-        reply: "I'm **Cisco**, Joe Tech's automated tech advisor! I stay synced with all new product arrivals, test reports, pricing, and repair bookings across our Nsukka and Lagos branches.",
+        reply: "I'm Cisco, Joe Tech's automated tech advisor! I stay synced with all new product arrivals, test reports, pricing, and repair bookings across our Nsukka and Lagos branches.",
       };
     }
 
@@ -145,7 +145,7 @@ export const AIChatWidget: React.FC = () => {
           p.category?.toLowerCase().includes('iphone')
       ).slice(0, 4);
 
-      const itemsStr = appleList.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const itemsStr = appleList.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
 
       return {
         reply: `Here are our top Apple devices in stock (battery health tested, clean IMEI & iCloud free):\n\n${itemsStr || 'Full lineup available in store.'}`,
@@ -166,7 +166,7 @@ export const AIChatWidget: React.FC = () => {
           p.category?.toLowerCase().includes('android')
       ).slice(0, 4);
 
-      const itemsStr = androidList.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const itemsStr = androidList.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
 
       return {
         reply: `Here are popular Android smartphones in stock:\n\n${itemsStr || 'Wide range from flagship to budget friendly.'}`,
@@ -187,7 +187,7 @@ export const AIChatWidget: React.FC = () => {
           p.category?.toLowerCase().includes('laptop')
       ).slice(0, 4);
 
-      const itemsStr = laptopList.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const itemsStr = laptopList.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
 
       return {
         reply: `Here are our available laptops & MacBooks, pre-configured and tested:\n\n${itemsStr || 'Check our catalog for all specs.'}`,
@@ -211,7 +211,7 @@ export const AIChatWidget: React.FC = () => {
     // 8. Repairs & Diagnosis
     if (q.includes('repair') || q.includes('fix') || q.includes('screen') || q.includes('battery issue') || q.includes('fault') || q.includes('charge port')) {
       return {
-        reply: "We provide **100% Free Diagnosis** on every phone, laptop, and inverter! We diagnose the exact problem and quote you before any work starts. Most common repairs are finished same day with a 2-week warranty.",
+        reply: "We provide 100% Free Diagnosis on every phone, laptop, and inverter! We diagnose the exact problem and quote you before any work starts. Most common repairs are finished same day with a 2-week warranty.",
         quickActions: [
           { label: '🛠️ Book Free Diagnosis', action: () => goToRepairs() },
           { label: '💬 Chat With Technician', action: () => window.open(waLink('Hello Joe Tech, I would like to book a repair.'), '_blank') },
@@ -222,7 +222,7 @@ export const AIChatWidget: React.FC = () => {
     // 9. Store Locations & Contact
     if (q.includes('where') || q.includes('location') || q.includes('address') || q.includes('branch') || q.includes('lagos') || q.includes('nsukka')) {
       return {
-        reply: `Visit us to test devices in person:\n\n📍 **Nsukka Branch**: ${branches[0]?.street || 'University Road'}, ${branches[0]?.city || 'Nsukka'}\n📍 **Lagos Branch**: ${branches[1]?.street || 'Computer Village'}, ${branches[1]?.city || 'Ikeja'}\n\n🕒 Mon - Sat: 8:00 AM – 7:00 PM`,
+        reply: `Visit us to test devices in person:\n\n📍 Nsukka Branch: ${branches[0]?.street || 'University Road'}, ${branches[0]?.city || 'Nsukka'}\n📍 Lagos Branch: ${branches[1]?.street || 'Computer Village'}, ${branches[1]?.city || 'Ikeja'}\n\n🕒 Mon - Sat: 8:00 AM – 7:00 PM`,
         quickActions: [
           { label: '📞 Call Support', action: () => window.open(`tel:${contacts.primary}`) },
         ],
@@ -238,7 +238,7 @@ export const AIChatWidget: React.FC = () => {
     ).slice(0, 3);
 
     if (directMatches.length > 0) {
-      const list = directMatches.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const list = directMatches.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
       return {
         reply: `I found these matching items in our live stock:\n\n${list}\n\nTap below to view details:`,
         quickActions: directMatches.map((p: Product) => ({
@@ -254,7 +254,7 @@ export const AIChatWidget: React.FC = () => {
 
     // Fallback
     return {
-      reply: `I'm listening! You can ask about our latest uploads, specific device prices (e.g. *"MacBook Pro"*, *"iPhone 13"*), or our free repair service. What would you like to explore?`,
+      reply: `I'm listening! You can ask about our latest uploads, specific device prices (e.g. "MacBook Pro", "iPhone 13"), or our free repair service. What would you like to explore?`,
       quickActions: [
         { label: '✨ What’s New?', action: () => handleSend("What are the latest products uploaded?") },
         { label: '🛍️ Browse Store', action: () => { setCurrentView('categories'); setIsOpen(false); } },
@@ -296,7 +296,7 @@ export const AIChatWidget: React.FC = () => {
     {
       id: 'welcome',
       sender: 'cisco',
-      text: "Hey there! 👋 I'm **Cisco**, your Joe Tech assistant. I'm synced with our latest inventory and pricing in real time!\n\nAsk me about our new arrivals, prices, store locations, or book a free diagnosis.",
+      text: "Hey there! 👋 I'm Cisco, your Joe Tech assistant. I'm synced with our latest inventory and pricing in real time!\n\nAsk me about our new arrivals, prices, store locations, or book a free diagnosis.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       quickActions: [
         { label: '✨ Latest Uploads', action: () => handleSend("What are the latest products uploaded?") },
@@ -401,7 +401,17 @@ export const AIChatWidget: React.FC = () => {
                           : 'rounded-bl-none border border-jt-ink/8 bg-white text-jt-ink shadow-sm dark:border-white/10 dark:bg-jt-ink-soft dark:text-white'
                       }`}
                     >
-                      <p className="whitespace-pre-line">{m.text}</p>
+                      <p className="whitespace-pre-line">
+                        {m.text.split(/(Cisco)/gi).map((part, index) =>
+                          part.toLowerCase() === 'cisco' ? (
+                            <strong key={index} className="font-bold text-jt-blue dark:text-jt-mint">
+                              {part}
+                            </strong>
+                          ) : (
+                            part.replace(/\*\*/g, '')
+                          )
+                        )}
+                      </p>
                     </div>
                   </div>
 
