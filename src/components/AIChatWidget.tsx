@@ -1,353 +1,480 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, X, Send, Bot, User, Loader2, Minimize2, Wrench } from 'lucide-react';
-import { sendChatMessage, ChatMessage } from '../lib/aiChat';
-import { useAppContext } from '../store/AppContext';
+import {
+  Bot,
+  Send,
+  X,
+  Sparkles,
+  Wrench,
+  ShoppingBag,
+  MapPin,
+  ShieldCheck,
+  MessageCircle,
+  Flame,
+  Clock,
+  ChevronRight,
+} from 'lucide-react';
+import { useAppContext } from '../../store/AppContext';
+import { branches, contacts, site, waLink } from '../../config/site';
+import { formatPrice } from '../../data';
 
-const WELCOME_MESSAGE: ChatMessage = {
-  role: 'assistant',
-  content: "Welcome to Joe Tech. I'm **Joe**, and I'm here to help, whether you're comparing products, sorting out a repair, or have a question about an order. We're open **Monday to Saturday, 8am to 6pm**. What can I help you with today?",
-};
-
-const repairProcessSteps = [
-  { title: 'Tell Joe what\'s wrong', detail: 'Describe the device and the fault, right here in chat or on the Repairs page.' },
-  { title: 'Free diagnosis', detail: 'Drop it off (or request pickup) at either branch, we assess it at no charge.' },
-  { title: 'Get an upfront quote', detail: 'We confirm the cost with you before any work begins, no surprises.' },
-  { title: 'Same-day repair', detail: 'Most repairs are completed the same day by our technicians.' },
-  { title: 'Collect or get it delivered', detail: 'Pick it up in-branch, or have it delivered back to you.' },
-];
-
-function renderMarkdown(text: string): React.ReactNode {
-  // Simple markdown: bold **text**, line breaks
-  const parts = text.split(/(\*\*[^*]+\*\*|\n)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
-    }
-    if (part === '\n') return <br key={i} />;
-    return part;
-  });
+interface Message {
+  id: string;
+  sender: 'user' | 'cisco';
+  text: string;
+  timestamp: string;
+  quickActions?: { label: string; action: () => void }[];
 }
 
-export const AIChatWidget = () => {
-  const { products, setCurrentView } = useAppContext();
+export const ChatWidget: React.FC = () => {
+  const { products, setCurrentView, setActiveCategory, setActiveProductId } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showRepairProcess, setShowRepairProcess] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const repairPanelRef = useRef<HTMLDivElement>(null);
 
-  // Close repair process panel when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (repairPanelRef.current && !repairPanelRef.current.contains(e.target as Node)) {
-        setShowRepairProcess(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Derive latest uploads and featured products from live context
+  const recentProducts = React.useMemo(() => {
+    return [...products].reverse().slice(0, 4);
+  }, [products]);
 
-  useEffect(() => {
-    if (isOpen && !isMinimized) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      inputRef.current?.focus();
-      setUnreadCount(0);
-    }
-  }, [messages, isOpen, isMinimized]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      sender: 'cisco',
+      text: "Hey there! 👋 I'm **Cisco**, your Joe Tech assistant. I'm synced with our latest inventory and pricing in real time!\n\nAsk me about our new arrivals, prices, store locations, or book a free diagnosis.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      quickActions: [
+        { label: '✨ Latest Uploads', action: () => handleSend("What are the latest products uploaded?") },
+        { label: '📱 Browse iPhones', action: () => openCategory('iphones') },
+        { label: '💻 Laptops & MacBooks', action: () => openCategory('laptops') },
+        { label: '🛠️ Free Repair Quote', action: () => goToRepairs() },
+      ],
+    },
+  ]);
 
-  // Pulse badge after 3s to invite user
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isOpen) setUnreadCount(1);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleSend = async () => {
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
-
-    const userMsg: ChatMessage = { role: 'user', content: trimmed };
-    const newHistory = [...messages, userMsg];
-    setMessages(newHistory);
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      const reply = await sendChatMessage(trimmed, newHistory, products);
-      const assistantMsg: ChatMessage = { role: 'assistant', content: reply };
-      setMessages(prev => [...prev, assistantMsg]);
-      if (!isOpen || isMinimized) {
-        setUnreadCount(prev => prev + 1);
-      }
-    } catch {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: "Something went wrong on my end. Please try again, or reach our team directly on WhatsApp if it persists."
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  useEffect(() => {
+    if (isOpen) scrollToBottom();
+  }, [messages, isOpen, isTyping]);
 
-  const quickPrompts = [
-    "What's trending?",
-    "Browse by category",
-    "Walk me through ordering",
-    "Best value products",
-  ];
-
-  const handlePromptSelect = (prompt: string) => {
-    setInput(prompt);
-    setTimeout(() => inputRef.current?.focus(), 50);
-  };
-
-  const handleBookRepairNow = () => {
-    setShowRepairProcess(false);
+  const openCategory = (id: string) => {
+    setActiveCategory(id);
+    setCurrentView('category');
     setIsOpen(false);
-    setCurrentView('services');
     window.scrollTo(0, 0);
+  };
+
+  const goToRepairs = () => {
+    setCurrentView('services');
+    setIsOpen(false);
+    window.scrollTo(0, 0);
+  };
+
+  const generateCiscoResponse = (userText: string): { reply: string; quickActions?: { label: string; action: () => void }[] } => {
+    const q = userText.toLowerCase().trim();
+
+    // 1. Recent Uploads / What's New / Latest Arrivals
+    if (
+      q.includes('latest') ||
+      q.includes('recent') ||
+      q.includes('new arrival') ||
+      q.includes('new product') ||
+      q.includes('new upload') ||
+      q.includes('what is new') ||
+      q.includes("what's new") ||
+      q.includes('fresh stock')
+    ) {
+      if (recentProducts.length === 0) {
+        return {
+          reply: "Our shelves are currently being updated! Check back shortly or browse our main store sections.",
+          quickActions: [{ label: 'Browse Shop', action: () => openCategory('iphones') }],
+        };
+      }
+
+      const listStr = recentProducts
+        .map((p) => `• **${p.name}** — ${formatPrice(p.price)} (${p.condition || 'Stock Available'})`)
+        .join('\n');
+
+      return {
+        reply: `Here are our **latest arrivals & recent uploads** directly from our shelves:\n\n${listStr}\n\nTap any item below to see specs or add it to your cart:`,
+        quickActions: recentProducts.map((p) => ({
+          label: `${p.name.slice(0, 18)}...`,
+          action: () => {
+            setActiveProductId(p.id);
+            setCurrentView('product');
+            setIsOpen(false);
+            window.scrollTo(0, 0);
+          },
+        })),
+      };
+    }
+
+    // 2. Budget Queries (e.g. "under 200k", "under 100000", "cheap")
+    const priceMatch = q.match(/under\s*(\d+)/) || q.match(/below\s*(\d+)/);
+    if (priceMatch) {
+      let limit = parseInt(priceMatch[1], 10);
+      if (limit < 1000) limit = limit * 1000; // handles "under 200k"
+      const budgetItems = products.filter((p) => p.price <= limit).slice(0, 4);
+
+      if (budgetItems.length > 0) {
+        const itemsList = budgetItems
+          .map((p) => `• **${p.name}** — ${formatPrice(p.price)}`)
+          .join('\n');
+        return {
+          reply: `Here is what we have in stock within your budget (under ${formatPrice(limit)}):\n\n${itemsList}`,
+          quickActions: budgetItems.map((p) => ({
+            label: p.name.slice(0, 20),
+            action: () => {
+              setActiveProductId(p.id);
+              setCurrentView('product');
+              setIsOpen(false);
+            },
+          })),
+        };
+      }
+    }
+
+    // 3. Casual Greetings & Identity
+    if (q.includes('how are you') || q.includes('how far') || q.includes('how r u')) {
+      return {
+        reply: "I'm running smoothly and up-to-date with all our latest stock! 🚀 What kind of gadget or service are you looking for today?",
+      };
+    }
+
+    if (q.includes('who are you') || q.includes('your name') || q.includes('cisco')) {
+      return {
+        reply: "I'm **Cisco**, Joe Tech's automated tech advisor! I stay synced with all new product arrivals, test reports, pricing, and repair bookings across our Nsukka and Lagos branches.",
+      };
+    }
+
+    if (q === 'hello' || q === 'hi' || q === 'hey' || q === 'good day' || q === 'good morning' || q === 'good afternoon') {
+      const greetings = [
+        "Hello! Great to have you at Joe Tech. Looking for a new phone, laptop, solar gear, or repair assistance?",
+        "Hey! Cisco here. We have fresh tech stock on the shelves today. How can I help?",
+        "Welcome! What can I help you find or check pricing for today?",
+      ];
+      return {
+        reply: greetings[Math.floor(Math.random() * greetings.length)],
+        quickActions: [
+          { label: '✨ Recent Uploads', action: () => handleSend("What are the latest products uploaded?") },
+          { label: '📱 View iPhones', action: () => openCategory('iphones') },
+          { label: '💻 Laptops', action: () => openCategory('laptops') },
+        ],
+      };
+    }
+
+    // 4. Apple / iPhones / iPads
+    if (q.includes('iphone') || q.includes('ipad') || q.includes('apple') || q.includes('airpods')) {
+      const appleList = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes('iphone') ||
+          p.name.toLowerCase().includes('ipad') ||
+          p.category?.toLowerCase().includes('iphone')
+      ).slice(0, 4);
+
+      const itemsStr = appleList.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+
+      return {
+        reply: `Here are our top Apple devices in stock (battery health tested, clean IMEI & iCloud free):\n\n${itemsStr || 'Full lineup available in store.'}`,
+        quickActions: [
+          { label: 'Browse All Apple Gear', action: () => openCategory('iphones') },
+        ],
+      };
+    }
+
+    // 5. Android / Samsung / Pixel / Tecno / Infinix
+    if (q.includes('android') || q.includes('samsung') || q.includes('pixel') || q.includes('tecno') || q.includes('infinix') || q.includes('redmi')) {
+      const androidList = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes('samsung') ||
+          p.name.toLowerCase().includes('pixel') ||
+          p.name.toLowerCase().includes('tecno') ||
+          p.name.toLowerCase().includes('infinix') ||
+          p.category?.toLowerCase().includes('android')
+      ).slice(0, 4);
+
+      const itemsStr = androidList.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+
+      return {
+        reply: `Here are popular Android smartphones in stock:\n\n${itemsStr || 'Wide range from flagship to budget friendly.'}`,
+        quickActions: [
+          { label: 'Browse Androids', action: () => openCategory('android') },
+        ],
+      };
+    }
+
+    // 6. Laptops & Computers
+    if (q.includes('laptop') || q.includes('macbook') || q.includes('dell') || q.includes('hp') || q.includes('lenovo') || q.includes('computer')) {
+      const laptopList = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes('macbook') ||
+          p.name.toLowerCase().includes('laptop') ||
+          p.name.toLowerCase().includes('dell') ||
+          p.name.toLowerCase().includes('hp') ||
+          p.category?.toLowerCase().includes('laptop')
+      ).slice(0, 4);
+
+      const itemsStr = laptopList.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+
+      return {
+        reply: `Here are our available laptops & MacBooks, pre-configured and tested:\n\n${itemsStr || 'Check our catalog for all specs.'}`,
+        quickActions: [
+          { label: 'Browse Laptops', action: () => openCategory('laptops') },
+        ],
+      };
+    }
+
+    // 7. Solar & Inverters
+    if (q.includes('solar') || q.includes('inverter') || q.includes('battery') || q.includes('panel') || q.includes('tubular') || q.includes('lithium')) {
+      return {
+        reply: "We stock pure sine-wave hybrid inverters, long-lasting lithium & tubular batteries, and high-yield mono solar panels. We also handle site sizing and installations.",
+        quickActions: [
+          { label: 'Explore Solar Solutions', action: () => openCategory('solar') },
+          { label: '💬 WhatsApp Solar Tech', action: () => window.open(waLink('Hello Joe Tech, I need an inverter/solar setup quote.'), '_blank') },
+        ],
+      };
+    }
+
+    // 8. Repairs & Diagnosis
+    if (q.includes('repair') || q.includes('fix') || q.includes('screen') || q.includes('battery issue') || q.includes('fault') || q.includes('charge port')) {
+      return {
+        reply: "We provide **100% Free Diagnosis** on every phone, laptop, and inverter! We diagnose the exact problem and quote you before any work starts. Most common repairs are finished same day with a 2-week warranty.",
+        quickActions: [
+          { label: '🛠️ Book Free Diagnosis', action: () => goToRepairs() },
+          { label: '💬 Chat With Technician', action: () => window.open(waLink('Hello Joe Tech, I would like to book a repair.'), '_blank') },
+        ],
+      };
+    }
+
+    // 9. Store Locations & Contact
+    if (q.includes('where') || q.includes('location') || q.includes('address') || q.includes('branch') || q.includes('lagos') || q.includes('nsukka')) {
+      return {
+        reply: `Visit us to test devices in person:\n\n📍 **Nsukka Branch**: ${branches[0]?.street || 'University Road'}, ${branches[0]?.city || 'Nsukka'}\n📍 **Lagos Branch**: ${branches[1]?.street || 'Computer Village'}, ${branches[1]?.city || 'Ikeja'}\n\n🕒 Mon - Sat: 8:00 AM – 7:00 PM`,
+        quickActions: [
+          { label: '📞 Call Support', action: () => window.open(`tel:${contacts.primary}`) },
+        ],
+      };
+    }
+
+    // 10. Direct Name Match in Current Inventory
+    const directMatches = products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.category?.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    if (directMatches.length > 0) {
+      const list = directMatches.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      return {
+        reply: `I found these matching items in our live stock:\n\n${list}\n\nTap below to view details:`,
+        quickActions: directMatches.map((p) => ({
+          label: p.name.slice(0, 20),
+          action: () => {
+            setActiveProductId(p.id);
+            setCurrentView('product');
+            setIsOpen(false);
+          },
+        })),
+      };
+    }
+
+    // Fallback
+    return {
+      reply: `I'm listening! You can ask about our latest uploads, specific device prices (e.g. *"MacBook Pro"*, *"iPhone 13"*), or our free repair service. What would you like to explore?`,
+      quickActions: [
+        { label: '✨ What’s New?', action: () => handleSend("What are the latest products uploaded?") },
+        { label: '🛍️ Browse Store', action: () => { setCurrentView('categories'); setIsOpen(false); } },
+        { label: '💬 Talk to Agent', action: () => window.open(waLink(`Hello Joe Tech, I am asking about: ${userText}`), '_blank') },
+      ],
+    };
+  };
+
+  const handleSend = (textToSend?: string) => {
+    const query = (textToSend || input).trim();
+    if (!query) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: query,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsTyping(true);
+
+    setTimeout(() => {
+      const response = generateCiscoResponse(query);
+      const ciscoMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'cisco',
+        text: response.reply,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        quickActions: response.quickActions,
+      };
+      setMessages((prev) => [...prev, ciscoMessage]);
+      setIsTyping(false);
+    }, 550);
   };
 
   return (
     <>
-      {/* Chat Window */}
+      {/* ── Floating Launcher with Glowing Cisco AI Avatar ── */}
+      <div className="fixed bottom-5 right-5 z-50">
+        <motion.button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.94 }}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-jt-blue to-jt-blue-soft text-white shadow-[0_8px_25px_rgba(54,38,167,0.45)] border border-jt-mint/30"
+          aria-label="Open Cisco AI Chat"
+        >
+          <span className="absolute -inset-1 animate-pulse rounded-full bg-jt-mint/25 blur-sm" />
+          <span className="relative flex h-full w-full items-center justify-center">
+            {isOpen ? (
+              <X className="h-6 w-6 text-white" />
+            ) : (
+              <div className="relative">
+                <Bot className="h-7 w-7 text-jt-mint" />
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-jt-lime opacity-75" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-jt-lime" />
+                </span>
+              </div>
+            )}
+          </span>
+        </motion.button>
+      </div>
+
+      {/* ── Chat Modal Window ── */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: isMinimized ? 0 : 1, y: isMinimized ? 20 : 0, scale: isMinimized ? 0.95 : 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed bottom-24 right-4 md:right-6 z-50 w-[calc(100vw-2rem)] max-w-sm"
-            style={{ display: isMinimized ? 'none' : undefined }}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 25, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="fixed bottom-22 right-4 z-50 flex h-[540px] max-h-[82vh] w-[calc(100vw-32px)] max-w-[390px] flex-col overflow-hidden rounded-3xl border border-jt-blue/20 bg-white shadow-2xl dark:border-white/15 dark:bg-[#121620]"
           >
-            <div className="bg-white dark:bg-[#111] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden"
-              style={{ height: '520px' }}>
-              
-              {/* Header */}
-              <div className="bg-gradient-to-r from-[#3626a7] to-[#281c7d] px-4 py-3 flex items-center justify-between flex-shrink-0">
-                <div className="flex items-center space-x-3">
-                  <div className="relative w-9 h-9 flex-shrink-0">
-                    <img src="/ai-bot-icon.jpg" alt="Joe, AI Assistant" className="w-9 h-9 rounded-full object-cover border-2 border-white/30" />
-                    <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-[#3626a7] animate-pulse" />
-                  </div>
-                  <div>
-                    <p className="text-gray-800 dark:text-white font-bold text-sm leading-none">Joe, AI Assistant</p>
-                    <p className="text-green-200 text-xs mt-0.5">Online now, always happy to help</p>
-                  </div>
+            {/* Header */}
+            <div className="relative flex items-center justify-between bg-gradient-to-r from-jt-blue via-jt-blue-deep to-jt-ink px-4 py-3.5 text-white">
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-jt-mint/40 bg-jt-mint/15 shadow-[0_0_15px_rgba(0,240,255,0.3)]">
+                  <Bot className="h-5 w-5 text-jt-mint" />
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-jt-lime ring-2 ring-jt-blue" />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setIsMinimized(true)}
-                    className="text-gray-800 dark:text-white/70 hover:text-gray-800 dark:text-white transition-colors p-1"
-                  >
-                    <Minimize2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="text-gray-800 dark:text-white/70 hover:text-gray-800 dark:text-white transition-colors p-1"
-                  >
-                    <X size={18} />
-                  </button>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-display text-sm font-bold text-white">Cisco</p>
+                    <span className="rounded-full bg-jt-mint/20 px-2 py-0.2 text-[9px] font-bold uppercase tracking-wider text-jt-mint">
+                      AI Assistant
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-jt-steel">Live Inventory Synced · Ready to help</p>
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-gray-50 dark:bg-[#0d0d0d]">
-                {messages.map((msg, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {msg.role === 'assistant' && (
-                      <div className="w-7 h-7 rounded-full bg-[#3626a7] flex items-center justify-center flex-shrink-0 mb-1">
-                        <Bot size={14} className="text-gray-800 dark:text-white" />
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="rounded-full p-1.5 text-jt-steel hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-jt-paper/60 dark:bg-[#0D1017]">
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
+                >
+                  <div className="flex items-end gap-2 max-w-[88%]">
+                    {m.sender === 'cisco' && (
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-jt-blue/15 text-jt-blue dark:bg-jt-mint/15 dark:text-jt-mint">
+                        <Bot size={13} />
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                        msg.role === 'user'
-                          ? 'bg-[#3626a7] text-white rounded-br-sm'
-                          : 'bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-gray-100 shadow-sm border border-gray-100 dark:border-gray-800 rounded-bl-sm'
+                      className={`rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                        m.sender === 'user'
+                          ? 'rounded-br-none bg-jt-blue text-white shadow-sm'
+                          : 'rounded-bl-none border border-jt-ink/8 bg-white text-jt-ink shadow-sm dark:border-white/10 dark:bg-jt-ink-soft dark:text-white'
                       }`}
                     >
-                      {renderMarkdown(msg.content)}
-                    </div>
-                    {msg.role === 'user' && (
-                      <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 mb-1">
-                        <User size={14} className="text-gray-500 dark:text-gray-300" />
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-
-                {/* Interactive quick-reply chips, shown right after the welcome message */}
-                {messages.length === 1 && !isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2, delay: 0.15 }}
-                    className="flex flex-wrap gap-1.5 pl-9"
-                  >
-                    {quickPrompts.map((prompt) => (
-                      <button
-                        key={prompt}
-                        onClick={() => handlePromptSelect(prompt)}
-                        className="text-xs font-medium px-3 py-1.5 rounded-full bg-white dark:bg-[#1a1a1a] border border-[#3626a7]/30 text-[#3626a7] dark:text-jt-mint hover:bg-[#3626a7] hover:text-white dark:hover:bg-jt-mint dark:hover:text-jt-ink transition-colors shadow-sm"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-
-                {isLoading && (
-                  <div className="flex items-end gap-2 justify-start">
-                    <div className="w-7 h-7 rounded-full bg-[#3626a7] flex items-center justify-center flex-shrink-0">
-                      <Bot size={14} className="text-gray-800 dark:text-white" />
-                    </div>
-                    <div className="bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-                      <div className="flex space-x-1.5 items-center h-4">
-                        <span className="w-2 h-2 bg-[#3626a7] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-[#3626a7] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-[#3626a7] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
+                      <p className="whitespace-pre-line">{m.text}</p>
                     </div>
                   </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
 
-              {/* Repair Process Dropdown */}
-              <AnimatePresence>
-                {showRepairProcess && (
-                  <motion.div
-                    ref={repairPanelRef}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 6 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute bottom-[68px] left-3 right-3 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-10 overflow-hidden"
-                  >
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-3 pt-2.5 pb-2">Our repair process</p>
-                    <div className="max-h-56 overflow-y-auto px-3 pb-2 space-y-2.5">
-                      {repairProcessSteps.map((step, i) => (
-                        <div key={step.title} className="flex items-start gap-2.5">
-                          <span className="w-5 h-5 flex-shrink-0 rounded-full bg-[#3626a7]/10 text-[#3626a7] dark:bg-jt-mint/10 dark:text-jt-mint text-[10px] font-bold flex items-center justify-center mt-0.5">
-                            {i + 1}
-                          </span>
-                          <div>
-                            <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">{step.title}</p>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{step.detail}</p>
-                          </div>
-                        </div>
+                  {/* Quick Action Buttons */}
+                  {m.quickActions && m.quickActions.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5 pl-8">
+                      {m.quickActions.map((qa, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={qa.action}
+                          className="rounded-full border border-jt-blue/25 bg-white px-2.5 py-1 text-[11px] font-semibold text-jt-blue shadow-xs transition-all hover:bg-jt-blue hover:text-white dark:border-jt-mint/30 dark:bg-jt-ink-soft dark:text-jt-mint dark:hover:bg-jt-mint dark:hover:text-jt-ink"
+                        >
+                          {qa.label}
+                        </button>
                       ))}
                     </div>
-                    <button
-                      onClick={handleBookRepairNow}
-                      className="w-full text-center text-xs font-bold py-2.5 bg-[#3626a7] hover:bg-[#281c7d] text-white transition-colors border-t border-gray-100 dark:border-gray-800"
-                    >
-                      Book a Repair Now
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  )}
 
-              {/* Input */}
-              <div className="relative px-3 py-3 bg-white dark:bg-[#111] border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  {/* Repair process trigger button */}
-                  <button
-                    onClick={() => setShowRepairProcess(prev => !prev)}
-                    title="See our repair process"
-                    className={`w-9 h-9 flex-shrink-0 rounded-xl flex items-center justify-center transition-all border ${
-                      showRepairProcess
-                        ? 'bg-[#3626a7] text-white border-[#3626a7]'
-                        : 'bg-gray-50 dark:bg-[#1a1a1a] text-gray-400 border-gray-200 dark:border-gray-700 hover:border-[#3626a7] hover:brand-text'
-                    }`}
-                  >
-                    <Wrench size={15} />
-                  </button>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything..."
-                    className="flex-1 text-sm bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#3626a7] dark:text-gray-800 dark:text-white placeholder-gray-400 transition-colors"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={!input.trim() || isLoading}
-                    className="w-10 h-10 bg-[#3626a7] hover:bg-[#281c7d] disabled:opacity-40 rounded-xl flex items-center justify-center text-white transition-all flex-shrink-0"
-                  >
-                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                  </button>
+                  <span className="mt-1 text-[9px] text-jt-steel px-8">{m.timestamp}</span>
                 </div>
-              </div>
+              ))}
+
+              {isTyping && (
+                <div className="flex items-center gap-2 pl-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-jt-blue/15 text-jt-blue dark:bg-jt-mint/15 dark:text-jt-mint">
+                    <Bot size={13} />
+                  </div>
+                  <div className="rounded-2xl rounded-bl-none border border-jt-ink/8 bg-white px-3 py-2 text-xs text-jt-steel dark:border-white/10 dark:bg-jt-ink-soft">
+                    <span className="inline-flex gap-1">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-jt-blue dark:bg-jt-mint" style={{ animationDelay: '0ms' }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-jt-blue dark:bg-jt-mint" style={{ animationDelay: '150ms' }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-jt-blue dark:bg-jt-mint" style={{ animationDelay: '300ms' }} />
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
+
+            {/* Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSend();
+              }}
+              className="flex items-center gap-2 border-t border-jt-ink/10 bg-white p-2.5 dark:border-white/10 dark:bg-jt-ink-soft"
+            >
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask about new arrivals, specs, repairs..."
+                className="flex-1 bg-transparent px-3 py-2 text-xs text-jt-ink placeholder:text-jt-steel focus:outline-none dark:text-white"
+              />
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-jt-blue text-white transition-opacity disabled:opacity-40 hover:bg-jt-blue-soft dark:bg-jt-mint dark:text-jt-ink"
+              >
+                <Send size={14} />
+              </button>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Floating Button */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => {
-          if (isMinimized) setIsMinimized(false);
-          setIsOpen(prev => !prev);
-          setUnreadCount(0);
-        }}
-        className="fixed bottom-6 right-4 md:right-6 z-50 w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-gray-800 dark:text-white border border-gray-100 dark:border-gray-800"
-        style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}
-        aria-label="Open AI Chat Assistant"
-      >
-        <AnimatePresence mode="wait">
-          {isOpen && !isMinimized ? (
-            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
-              <X size={22} className="text-gray-600 dark:text-gray-800 dark:text-white" />
-            </motion.div>
-          ) : (
-            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} className="w-full h-full rounded-full overflow-hidden">
-              <img src="/ai-bot-icon.jpg" alt="AI Chat" className="w-full h-full object-cover" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {(!isOpen || isMinimized) && (
-          <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white dark:border-jt-ink animate-pulse" />
-        )}
-
-        {unreadCount > 0 && !isOpen && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-gray-800 dark:text-white text-[10px] font-bold rounded-full flex items-center justify-center"
-          >
-            {unreadCount}
-          </motion.span>
-        )}
-      </motion.button>
     </>
   );
 };
