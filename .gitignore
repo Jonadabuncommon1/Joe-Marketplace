@@ -8,4 +8,4 @@ coverage/
 !.env.example
 public/suites/
 src/Suites/
-
+.vercel

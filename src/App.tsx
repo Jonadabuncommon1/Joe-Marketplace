@@ -32,9 +32,8 @@ const LoadingView = () => (
 function AppContent() {
   const { currentView, isAdminAuthenticated, loadingAuth } = useAppContext();
 
-  if (loadingAuth) return <LoadingView />;
-
   if (currentView === 'admin') {
+    if (loadingAuth) return <LoadingView />;
     return (
       <React.Suspense fallback={<LoadingView />}>
         {isAdminAuthenticated ? <AdminLayout /> : <AdminLogin />}
