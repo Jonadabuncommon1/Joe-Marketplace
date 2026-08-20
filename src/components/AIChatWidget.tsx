@@ -1,22 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Bot,
   Send,
   X,
-  Sparkles,
-  Wrench,
-  ShoppingBag,
-  MapPin,
-  ShieldCheck,
-  MessageCircle,
-  Flame,
-  Clock,
-  ChevronRight,
 } from 'lucide-react';
-import { useAppContext } from '../../store/AppContext';
-import { branches, contacts, site, waLink } from '../../config/site';
-import { formatPrice } from '../../data';
+import { useAppContext } from '../store/AppContext';
+import { branches, contacts, site, waLink } from '../config/site';
+import { formatPrice } from '../data';
+import { Product } from '../types';
 
 interface Message {
   id: string;
@@ -26,7 +18,7 @@ interface Message {
   quickActions?: { label: string; action: () => void }[];
 }
 
-export const ChatWidget: React.FC = () => {
+export const AIChatWidget: React.FC = () => {
   const { products, setCurrentView, setActiveCategory, setActiveProductId } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -34,32 +26,9 @@ export const ChatWidget: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Derive latest uploads and featured products from live context
-  const recentProducts = React.useMemo(() => {
+  const recentProducts = useMemo(() => {
     return [...products].reverse().slice(0, 4);
   }, [products]);
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      sender: 'cisco',
-      text: "Hey there! 👋 I'm **Cisco**, your Joe Tech assistant. I'm synced with our latest inventory and pricing in real time!\n\nAsk me about our new arrivals, prices, store locations, or book a free diagnosis.",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      quickActions: [
-        { label: '✨ Latest Uploads', action: () => handleSend("What are the latest products uploaded?") },
-        { label: '📱 Browse iPhones', action: () => openCategory('iphones') },
-        { label: '💻 Laptops & MacBooks', action: () => openCategory('laptops') },
-        { label: '🛠️ Free Repair Quote', action: () => goToRepairs() },
-      ],
-    },
-  ]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    if (isOpen) scrollToBottom();
-  }, [messages, isOpen, isTyping]);
 
   const openCategory = (id: string) => {
     setActiveCategory(id);
@@ -96,12 +65,12 @@ export const ChatWidget: React.FC = () => {
       }
 
       const listStr = recentProducts
-        .map((p) => `• **${p.name}** — ${formatPrice(p.price)} (${p.condition || 'Stock Available'})`)
+        .map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)} (${p.condition || 'Stock Available'})`)
         .join('\n');
 
       return {
         reply: `Here are our **latest arrivals & recent uploads** directly from our shelves:\n\n${listStr}\n\nTap any item below to see specs or add it to your cart:`,
-        quickActions: recentProducts.map((p) => ({
+        quickActions: recentProducts.map((p: Product) => ({
           label: `${p.name.slice(0, 18)}...`,
           action: () => {
             setActiveProductId(p.id);
@@ -113,20 +82,20 @@ export const ChatWidget: React.FC = () => {
       };
     }
 
-    // 2. Budget Queries (e.g. "under 200k", "under 100000", "cheap")
+    // 2. Budget Queries
     const priceMatch = q.match(/under\s*(\d+)/) || q.match(/below\s*(\d+)/);
     if (priceMatch) {
       let limit = parseInt(priceMatch[1], 10);
-      if (limit < 1000) limit = limit * 1000; // handles "under 200k"
-      const budgetItems = products.filter((p) => p.price <= limit).slice(0, 4);
+      if (limit < 1000) limit = limit * 1000;
+      const budgetItems = products.filter((p: Product) => p.price <= limit).slice(0, 4);
 
       if (budgetItems.length > 0) {
         const itemsList = budgetItems
-          .map((p) => `• **${p.name}** — ${formatPrice(p.price)}`)
+          .map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`)
           .join('\n');
         return {
           reply: `Here is what we have in stock within your budget (under ${formatPrice(limit)}):\n\n${itemsList}`,
-          quickActions: budgetItems.map((p) => ({
+          quickActions: budgetItems.map((p: Product) => ({
             label: p.name.slice(0, 20),
             action: () => {
               setActiveProductId(p.id);
@@ -170,13 +139,13 @@ export const ChatWidget: React.FC = () => {
     // 4. Apple / iPhones / iPads
     if (q.includes('iphone') || q.includes('ipad') || q.includes('apple') || q.includes('airpods')) {
       const appleList = products.filter(
-        (p) =>
+        (p: Product) =>
           p.name.toLowerCase().includes('iphone') ||
           p.name.toLowerCase().includes('ipad') ||
           p.category?.toLowerCase().includes('iphone')
       ).slice(0, 4);
 
-      const itemsStr = appleList.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const itemsStr = appleList.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
 
       return {
         reply: `Here are our top Apple devices in stock (battery health tested, clean IMEI & iCloud free):\n\n${itemsStr || 'Full lineup available in store.'}`,
@@ -189,7 +158,7 @@ export const ChatWidget: React.FC = () => {
     // 5. Android / Samsung / Pixel / Tecno / Infinix
     if (q.includes('android') || q.includes('samsung') || q.includes('pixel') || q.includes('tecno') || q.includes('infinix') || q.includes('redmi')) {
       const androidList = products.filter(
-        (p) =>
+        (p: Product) =>
           p.name.toLowerCase().includes('samsung') ||
           p.name.toLowerCase().includes('pixel') ||
           p.name.toLowerCase().includes('tecno') ||
@@ -197,7 +166,7 @@ export const ChatWidget: React.FC = () => {
           p.category?.toLowerCase().includes('android')
       ).slice(0, 4);
 
-      const itemsStr = androidList.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const itemsStr = androidList.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
 
       return {
         reply: `Here are popular Android smartphones in stock:\n\n${itemsStr || 'Wide range from flagship to budget friendly.'}`,
@@ -210,7 +179,7 @@ export const ChatWidget: React.FC = () => {
     // 6. Laptops & Computers
     if (q.includes('laptop') || q.includes('macbook') || q.includes('dell') || q.includes('hp') || q.includes('lenovo') || q.includes('computer')) {
       const laptopList = products.filter(
-        (p) =>
+        (p: Product) =>
           p.name.toLowerCase().includes('macbook') ||
           p.name.toLowerCase().includes('laptop') ||
           p.name.toLowerCase().includes('dell') ||
@@ -218,7 +187,7 @@ export const ChatWidget: React.FC = () => {
           p.category?.toLowerCase().includes('laptop')
       ).slice(0, 4);
 
-      const itemsStr = laptopList.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const itemsStr = laptopList.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
 
       return {
         reply: `Here are our available laptops & MacBooks, pre-configured and tested:\n\n${itemsStr || 'Check our catalog for all specs.'}`,
@@ -262,17 +231,17 @@ export const ChatWidget: React.FC = () => {
 
     // 10. Direct Name Match in Current Inventory
     const directMatches = products.filter(
-      (p) =>
+      (p: Product) =>
         p.name.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.category?.toLowerCase().includes(q)
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q))
     ).slice(0, 3);
 
     if (directMatches.length > 0) {
-      const list = directMatches.map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+      const list = directMatches.map((p: Product) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
       return {
         reply: `I found these matching items in our live stock:\n\n${list}\n\nTap below to view details:`,
-        quickActions: directMatches.map((p) => ({
+        quickActions: directMatches.map((p: Product) => ({
           label: p.name.slice(0, 20),
           action: () => {
             setActiveProductId(p.id);
@@ -323,9 +292,32 @@ export const ChatWidget: React.FC = () => {
     }, 550);
   };
 
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      sender: 'cisco',
+      text: "Hey there! 👋 I'm **Cisco**, your Joe Tech assistant. I'm synced with our latest inventory and pricing in real time!\n\nAsk me about our new arrivals, prices, store locations, or book a free diagnosis.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      quickActions: [
+        { label: '✨ Latest Uploads', action: () => handleSend("What are the latest products uploaded?") },
+        { label: '📱 Browse iPhones', action: () => openCategory('iphones') },
+        { label: '💻 Laptops & MacBooks', action: () => openCategory('laptops') },
+        { label: '🛠️ Free Repair Quote', action: () => goToRepairs() },
+      ],
+    },
+  ]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isOpen) scrollToBottom();
+  }, [messages, isOpen, isTyping]);
+
   return (
     <>
-      {/* ── Floating Launcher with Glowing Cisco AI Avatar ── */}
+      {/* Floating Launcher with Glowing Cisco AI Avatar */}
       <div className="fixed bottom-5 right-5 z-50">
         <motion.button
           type="button"
@@ -352,7 +344,7 @@ export const ChatWidget: React.FC = () => {
         </motion.button>
       </div>
 
-      {/* ── Chat Modal Window ── */}
+      {/* Chat Modal Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div

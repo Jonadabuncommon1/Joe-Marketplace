@@ -9,6 +9,7 @@ import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { WhatsAppCart } from './components/WhatsAppCart';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
+
 const HomeView = React.lazy(() => import('./components/home/HomeView').then(m => ({ default: m.HomeView })));
 const ProductDetailView = React.lazy(() => import('./components/shop/ProductDetailView').then(m => ({ default: m.ProductDetailView })));
 const WishlistView = React.lazy(() => import('./components/shop/WishlistView').then(m => ({ default: m.WishlistView })));
@@ -21,7 +22,7 @@ const AdminLogin = React.lazy(() => import('./components/admin/AdminLogin').then
 const CategoriesView = React.lazy(() => import('./components/shop/CategoriesView').then(m => ({ default: m.CategoriesView })));
 const CategoryView = React.lazy(() => import('./components/shop/CategoryView').then(m => ({ default: m.CategoryView })));
 const AuthView = React.lazy(() => import('./components/auth/AuthView').then(m => ({ default: m.AuthView })));
-const AIChatWidget = React.lazy(() => import('./components/AIChatWidget').then(m => ({ default: m.AIChatWidget })));
+const ChatWidget = React.lazy(() => import('./components/chat/ChatModal').then(m => ({ default: m.ChatWidget })));
 const ServicesView = React.lazy(() => import('./components/home/ServicesView').then(m => ({ default: m.ServicesView })));
 const CheckoutView = React.lazy(() => import('./components/shop/CheckoutView').then(m => ({ default: m.CheckoutView })));
 
@@ -33,14 +34,26 @@ function AppContent() {
   const { currentView, isAdminAuthenticated, loadingAuth } = useAppContext();
 
   if (loadingAuth) {
-    return <div className="min-h-screen bg-transparent dark:bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3626a7]"></div></div>;
+    return (
+      <div className="min-h-screen bg-transparent dark:bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3626a7]"></div>
+      </div>
+    );
   }
 
   if (currentView === 'admin') {
     if (!isAdminAuthenticated) {
-      return <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3626a7]"></div></div>}><AdminLogin /></React.Suspense>;
+      return (
+        <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3626a7]"></div></div>}>
+          <AdminLogin />
+        </React.Suspense>
+      );
     }
-    return <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3626a7]"></div></div>}><AdminLayout /></React.Suspense>;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3626a7]"></div></div>}>
+        <AdminLayout />
+      </React.Suspense>
+    );
   }
 
   return (
@@ -99,7 +112,7 @@ function AppContent() {
         <>
           <FloatingWhatsApp />
           <React.Suspense fallback={null}>
-            <AIChatWidget />
+            <ChatWidget />
           </React.Suspense>
         </>
       )}
@@ -109,7 +122,6 @@ function AppContent() {
 
 function App() {
   const [showSplash, setShowSplash] = React.useState(true);
-  // Stable identity: SplashScreen keys its teardown timers off this callback.
   const hideSplash = React.useCallback(() => setShowSplash(false), []);
 
   return (
