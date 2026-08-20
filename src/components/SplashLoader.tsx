@@ -1,18 +1,13 @@
 import React, { useEffect } from 'react';
 
-interface SplashProps {
-  onComplete?: () => void;
-}
-
-export const SplashLoader: React.FC<SplashProps> = ({ onComplete }) => {
+export const IntroAnimation = ({ onComplete }: { onComplete?: () => void }) => {
   useEffect(() => {
     if (onComplete) onComplete();
   }, [onComplete]);
-
   return null;
 };
 
-// Aliases
-export const IntroAnimation = SplashLoader;
-export const Onboarding = SplashLoader;
-export const OnboardingModal = SplashLoader;
+export const SplashLoader = IntroAnimation;
+export const DotMatrixLoader = IntroAnimation;
+export const Onboarding = IntroAnimation;
+export const OnboardingModal = IntroAnimation;
