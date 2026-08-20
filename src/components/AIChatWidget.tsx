@@ -402,13 +402,13 @@ export const AIChatWidget: React.FC = () => {
                       }`}
                     >
                       <p className="whitespace-pre-line">
-                        {m.text.split(/(Cisco)/gi).map((part, index) =>
+                        {m.text.replace(/\*\*/g, '').split(/(Cisco)/gi).map((part, index) =>
                           part.toLowerCase() === 'cisco' ? (
                             <strong key={index} className="font-bold text-jt-blue dark:text-jt-mint">
                               {part}
                             </strong>
                           ) : (
-                            part.replace(/\*\*/g, '')
+                            part
                           )
                         )}
                       </p>

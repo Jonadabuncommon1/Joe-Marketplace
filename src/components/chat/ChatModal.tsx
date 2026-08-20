@@ -1,21 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Bot,
   Send,
   X,
-  Sparkles,
-  Wrench,
-  ShoppingBag,
-  MapPin,
-  ShieldCheck,
-  MessageCircle,
-  Minimize2,
-  Maximize2,
 } from 'lucide-react';
 import { useAppContext } from '../../store/AppContext';
 import { branches, contacts, site, waLink } from '../../config/site';
 import { formatPrice } from '../../data';
+import { Product } from '../../types';
 
 interface Message {
   id: string;
@@ -32,27 +25,10 @@ export const ChatWidget: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      sender: 'cisco',
-      text: "Hey there! 👋 I'm **Cisco**, your Joe Tech assistant. Looking for a new gadget, need pricing, or want to book a free repair diagnosis?",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      quickActions: [
-        { label: '📱 View iPhones', action: () => openCategory('iphones') },
-        { label: '💻 Laptops & MacBooks', action: () => openCategory('laptops') },
-        { label: '🛠️ Free Repair Quote', action: () => goToRepairs() },
-      ],
-    },
-  ]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    if (isOpen) scrollToBottom();
-  }, [messages, isOpen, isTyping]);
+  // Derive latest uploads and featured products from live context
+  const recentProducts = useMemo(() => {
+    return [...products].reverse().slice(0, 4);
+  }, [products]);
 
   const openCategory = (id: string) => {
     setActiveCategory(id);
@@ -70,140 +46,219 @@ export const ChatWidget: React.FC = () => {
   const generateCiscoResponse = (userText: string): { reply: string; quickActions?: { label: string; action: () => void }[] } => {
     const q = userText.toLowerCase().trim();
 
-    // 1. Casual Chat & Status
+    // 1. Recent Uploads / What's New / Latest Arrivals
+    if (
+      q.includes('latest') ||
+      q.includes('recent') ||
+      q.includes('new arrival') ||
+      q.includes('new product') ||
+      q.includes('new upload') ||
+      q.includes('what is new') ||
+      q.includes("what's new") ||
+      q.includes('fresh stock')
+    ) {
+      if (recentProducts.length === 0) {
+        return {
+          reply: "Our shelves are currently being updated! Check back shortly or browse our main store sections.",
+          quickActions: [{ label: 'Browse Shop', action: () => openCategory('iphones') }],
+        };
+      }
+
+      const listStr = recentProducts
+        .map((p: Product) => `• ${p.name} — ${formatPrice(p.price)} (${p.condition || 'Stock Available'})`)
+        .join('\n');
+
+      return {
+        reply: `Here are our latest arrivals & recent uploads directly from our shelves:\n\n${listStr}\n\nTap any item below to see specs or add it to your cart:`,
+        quickActions: recentProducts.map((p: Product) => ({
+          label: `${p.name.slice(0, 18)}...`,
+          action: () => {
+            setActiveProductId(p.id);
+            setCurrentView('product');
+            setIsOpen(false);
+            window.scrollTo(0, 0);
+          },
+        })),
+      };
+    }
+
+    // 2. Budget Queries
+    const priceMatch = q.match(/under\s*(\d+)/) || q.match(/below\s*(\d+)/);
+    if (priceMatch) {
+      let limit = parseInt(priceMatch[1], 10);
+      if (limit < 1000) limit = limit * 1000;
+      const budgetItems = products.filter((p: Product) => p.price <= limit).slice(0, 4);
+
+      if (budgetItems.length > 0) {
+        const itemsList = budgetItems
+          .map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`)
+          .join('\n');
+        return {
+          reply: `Here is what we have in stock within your budget (under ${formatPrice(limit)}):\n\n${itemsList}`,
+          quickActions: budgetItems.map((p: Product) => ({
+            label: p.name.slice(0, 20),
+            action: () => {
+              setActiveProductId(p.id);
+              setCurrentView('product');
+              setIsOpen(false);
+            },
+          })),
+        };
+      }
+    }
+
+    // 3. Casual Greetings & Identity
     if (q.includes('how are you') || q.includes('how far') || q.includes('how r u')) {
       return {
-        reply: "I'm running at full speed and ready to help! 🚀 How can I assist you with your tech today?",
+        reply: "I'm running smoothly and up-to-date with all our latest stock! 🚀 What kind of gadget or service are you looking for today?",
       };
     }
 
     if (q.includes('who are you') || q.includes('your name') || q.includes('cisco')) {
       return {
-        reply: "I'm **Cisco**, Joe Tech's automated tech advisor! I help you find gadgets, check stock, look up repair estimates, and connect with our team in Lagos and Nsukka.",
+        reply: "I'm Cisco, Joe Tech's automated tech advisor! I stay synced with all new product arrivals, test reports, pricing, and repair bookings across our Nsukka and Lagos branches.",
       };
     }
 
-    if (q === 'hello' || q === 'hi' || q === 'hey' || q === 'good morning' || q === 'good afternoon' || q === 'good evening') {
+    if (q === 'hello' || q === 'hi' || q === 'hey' || q === 'good day' || q === 'good morning' || q === 'good afternoon') {
       const greetings = [
-        "Hello! Great to have you here. What tech are you searching for today?",
-        "Hey! Cisco here. Need help finding a phone, laptop, or solar gear?",
-        "Welcome to Joe Tech! How can I make your tech shopping easier today?",
+        "Hello! Great to have you at Joe Tech. Looking for a new phone, laptop, solar gear, or repair assistance?",
+        "Hey! Cisco here. We have fresh tech stock on the shelves today. How can I help?",
+        "Welcome! What can I help you find or check pricing for today?",
       ];
       return {
         reply: greetings[Math.floor(Math.random() * greetings.length)],
         quickActions: [
-          { label: 'Shop Phones', action: () => openCategory('iphones') },
-          { label: 'Shop Laptops', action: () => openCategory('laptops') },
+          { label: '✨ Recent Uploads', action: () => handleSend("What are the latest products uploaded?") },
+          { label: '📱 View iPhones', action: () => openCategory('iphones') },
+          { label: '💻 Laptops', action: () => openCategory('laptops') },
         ],
       };
     }
 
-    // 2. Repairs & Maintenance
-    if (q.includes('repair') || q.includes('fix') || q.includes('screen') || q.includes('battery issue') || q.includes('fault') || q.includes('water')) {
+    // 4. Apple / iPhones / iPads
+    if (q.includes('iphone') || q.includes('ipad') || q.includes('apple') || q.includes('airpods')) {
+      const appleList = products.filter(
+        (p: Product) =>
+          p.name.toLowerCase().includes('iphone') ||
+          p.name.toLowerCase().includes('ipad') ||
+          p.category?.toLowerCase().includes('iphone')
+      ).slice(0, 4);
+
+      const itemsStr = appleList.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
+
       return {
-        reply: "We offer **100% Free Diagnosis** on all phones, laptops, and inverters! Bring it to our Nsukka or Lagos branches—we diagnose the fault and quote you before touching anything. Most repairs take just 1 day and include a 2-week warranty.",
+        reply: `Here are our top Apple devices in stock (battery health tested, clean IMEI & iCloud free):\n\n${itemsStr || 'Full lineup available in store.'}`,
         quickActions: [
-          { label: '🛠️ Book Repair Now', action: () => goToRepairs() },
-          { label: '💬 WhatsApp Technician', action: () => window.open(waLink('Hello Joe Tech, I need a repair quote.'), '_blank') },
+          { label: 'Browse All Apple Gear', action: () => openCategory('iphones') },
         ],
       };
     }
 
-    // 3. iPhones & Apple
-    if (q.includes('iphone') || q.includes('ipad') || q.includes('apple')) {
-      const appleProducts = products.filter((p) => p.name.toLowerCase().includes('iphone') || p.name.toLowerCase().includes('ipad'));
-      const sample = appleProducts.slice(0, 3).map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+    // 5. Android / Samsung / Pixel / Tecno / Infinix
+    if (q.includes('android') || q.includes('samsung') || q.includes('pixel') || q.includes('tecno') || q.includes('infinix') || q.includes('redmi')) {
+      const androidList = products.filter(
+        (p: Product) =>
+          p.name.toLowerCase().includes('samsung') ||
+          p.name.toLowerCase().includes('pixel') ||
+          p.name.toLowerCase().includes('tecno') ||
+          p.name.toLowerCase().includes('infinix') ||
+          p.category?.toLowerCase().includes('android')
+      ).slice(0, 4);
+
+      const itemsStr = androidList.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
 
       return {
-        reply: `We stock clean UK-used and brand-new iPhones and iPads with battery health verified and iCloud cleared:\n\n${sample || 'All models available in store.'}`,
-        quickActions: [
-          { label: 'Browse Apple Stock', action: () => openCategory('iphones') },
-        ],
-      };
-    }
-
-    // 4. Android & Samsung
-    if (q.includes('android') || q.includes('samsung') || q.includes('pixel') || q.includes('tecno') || q.includes('infinix')) {
-      return {
-        reply: "We have authentic Samsung Galaxy flagships, Google Pixels, Tecno, and Infinix devices tested and ready to ship.",
+        reply: `Here are popular Android smartphones in stock:\n\n${itemsStr || 'Wide range from flagship to budget friendly.'}`,
         quickActions: [
           { label: 'Browse Androids', action: () => openCategory('android') },
         ],
       };
     }
 
-    // 5. Laptops & Computers
-    if (q.includes('laptop') || q.includes('macbook') || q.includes('dell') || q.includes('hp') || q.includes('computer')) {
-      const laptopList = products.filter((p) => p.category?.toLowerCase().includes('laptop') || p.name.toLowerCase().includes('macbook') || p.name.toLowerCase().includes('laptop'));
-      const sample = laptopList.slice(0, 3).map((p) => `• **${p.name}** — ${formatPrice(p.price)}`).join('\n');
+    // 6. Laptops & Computers
+    if (q.includes('laptop') || q.includes('macbook') || q.includes('dell') || q.includes('hp') || q.includes('lenovo') || q.includes('computer')) {
+      const laptopList = products.filter(
+        (p: Product) =>
+          p.name.toLowerCase().includes('macbook') ||
+          p.name.toLowerCase().includes('laptop') ||
+          p.name.toLowerCase().includes('dell') ||
+          p.name.toLowerCase().includes('hp') ||
+          p.category?.toLowerCase().includes('laptop')
+      ).slice(0, 4);
+
+      const itemsStr = laptopList.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
 
       return {
-        reply: `Here are some popular laptops available right now:\n\n${sample || 'Full range available in store with warranty.'}`,
+        reply: `Here are our available laptops & MacBooks, pre-configured and tested:\n\n${itemsStr || 'Check our catalog for all specs.'}`,
         quickActions: [
-          { label: 'Browse All Laptops', action: () => openCategory('laptops') },
+          { label: 'Browse Laptops', action: () => openCategory('laptops') },
         ],
       };
     }
 
-    // 6. Solar & Inverters
-    if (q.includes('solar') || q.includes('inverter') || q.includes('battery') || q.includes('panel') || q.includes('power')) {
+    // 7. Solar & Inverters
+    if (q.includes('solar') || q.includes('inverter') || q.includes('battery') || q.includes('panel') || q.includes('tubular') || q.includes('lithium')) {
       return {
-        reply: "We supply complete solar systems, lithium & tubular batteries, hybrid inverters, and high-efficiency mono panels with full installation support.",
+        reply: "We stock pure sine-wave hybrid inverters, long-lasting lithium & tubular batteries, and high-yield mono solar panels. We also handle site sizing and installations.",
         quickActions: [
-          { label: 'Browse Solar Range', action: () => openCategory('solar') },
+          { label: 'Explore Solar Solutions', action: () => openCategory('solar') },
+          { label: '💬 WhatsApp Solar Tech', action: () => window.open(waLink('Hello Joe Tech, I need an inverter/solar setup quote.'), '_blank') },
         ],
       };
     }
 
-    // 7. Location & Branches
-    if (q.includes('where') || q.includes('location') || q.includes('branch') || q.includes('address') || q.includes('lagos') || q.includes('nsukka')) {
+    // 8. Repairs & Diagnosis
+    if (q.includes('repair') || q.includes('fix') || q.includes('screen') || q.includes('battery issue') || q.includes('fault') || q.includes('charge port')) {
       return {
-        reply: `We have 2 physical branches where you can test devices before payment:\n\n📍 **Nsukka Branch**: ${branches[0]?.street || 'University Rd'}, ${branches[0]?.city || 'Nsukka'}\n📍 **Lagos Branch**: ${branches[1]?.street || 'Computer Village'}, ${branches[1]?.city || 'Ikeja'}\n\n🕒 Mon - Sat: 8:00 AM - 7:00 PM`,
-      };
-    }
-
-    // 8. Warranty & Delivery
-    if (q.includes('warranty') || q.includes('guarantee') || q.includes('delivery') || q.includes('waybill') || q.includes('ship')) {
-      return {
-        reply: "Every phone and laptop comes with verified store warranty. We provide nationwide doorstep delivery across Nigeria, or you can pick up at our Lagos or Nsukka shops.",
-      };
-    }
-
-    // 9. Talk to Human / WhatsApp
-    if (q.includes('human') || q.includes('person') || q.includes('agent') || q.includes('whatsapp') || q.includes('call')) {
-      return {
-        reply: "You can speak directly with our team right now on WhatsApp or call our support line!",
+        reply: "We provide 100% Free Diagnosis on every phone, laptop, and inverter! We diagnose the exact problem and quote you before any work starts. Most common repairs are finished same day with a 2-week warranty.",
         quickActions: [
-          { label: '💬 Chat on WhatsApp', action: () => window.open(waLink('Hello Joe Tech, I need assistance.'), '_blank') },
-          { label: `📞 Call ${contacts.primary}`, action: () => window.open(`tel:${contacts.primary}`) },
+          { label: '🛠️ Book Free Diagnosis', action: () => goToRepairs() },
+          { label: '💬 Chat With Technician', action: () => window.open(waLink('Hello Joe Tech, I would like to book a repair.'), '_blank') },
         ],
       };
     }
 
-    // 10. Intelligent Fallback
-    const matching = products.filter((p) => p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
-    if (matching.length > 0) {
-      const p = matching[0];
+    // 9. Store Locations & Contact
+    if (q.includes('where') || q.includes('location') || q.includes('address') || q.includes('branch') || q.includes('lagos') || q.includes('nsukka')) {
       return {
-        reply: `I found **${p.name}** for ${formatPrice(p.price)}! Would you like to view its full specs?`,
+        reply: `Visit us to test devices in person:\n\n📍 Nsukka Branch: ${branches[0]?.street || 'University Road'}, ${branches[0]?.city || 'Nsukka'}\n📍 Lagos Branch: ${branches[1]?.street || 'Computer Village'}, ${branches[1]?.city || 'Ikeja'}\n\n🕒 Mon - Sat: 8:00 AM – 7:00 PM`,
         quickActions: [
-          {
-            label: 'View Product Details',
-            action: () => {
-              setActiveProductId(p.id);
-              setCurrentView('product');
-              setIsOpen(false);
-            },
+          { label: '📞 Call Support', action: () => window.open(`tel:${contacts.primary}`) },
+        ],
+      };
+    }
+
+    // 10. Direct Name Match in Current Inventory
+    const directMatches = products.filter(
+      (p: Product) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q))
+    ).slice(0, 3);
+
+    if (directMatches.length > 0) {
+      const list = directMatches.map((p: Product) => `• ${p.name} — ${formatPrice(p.price)}`).join('\n');
+      return {
+        reply: `I found these matching items in our live stock:\n\n${list}\n\nTap below to view details:`,
+        quickActions: directMatches.map((p: Product) => ({
+          label: p.name.slice(0, 20),
+          action: () => {
+            setActiveProductId(p.id);
+            setCurrentView('product');
+            setIsOpen(false);
           },
-        ],
+        })),
       };
     }
 
+    // Fallback
     return {
-      reply: `I'm on it! You can explore our catalog or tell me specific specs you want (like *"iPhone 14"*, *"gaming monitor"*, or *"repair cost"*). What would you prefer?`,
+      reply: `I'm listening! You can ask about our latest uploads, specific device prices (e.g. "MacBook Pro", "iPhone 13"), or our free repair service. What would you like to explore?`,
       quickActions: [
-        { label: '🛍️ Explore Shop', action: () => { setCurrentView('categories'); setIsOpen(false); } },
-        { label: '💬 Speak to Human', action: () => window.open(waLink(`Hello Joe Tech, I am asking about: ${userText}`), '_blank') },
+        { label: '✨ What’s New?', action: () => handleSend("What are the latest products uploaded?") },
+        { label: '🛍️ Browse Store', action: () => { setCurrentView('categories'); setIsOpen(false); } },
+        { label: '💬 Talk to Agent', action: () => window.open(waLink(`Hello Joe Tech, I am asking about: ${userText}`), '_blank') },
       ],
     };
   };
@@ -234,12 +289,35 @@ export const ChatWidget: React.FC = () => {
       };
       setMessages((prev) => [...prev, ciscoMessage]);
       setIsTyping(false);
-    }, 600);
+    }, 550);
   };
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      sender: 'cisco',
+      text: "Hey there! 👋 I'm Cisco, your Joe Tech assistant. I'm synced with our latest inventory and pricing in real time!\n\nAsk me about our new arrivals, prices, store locations, or book a free diagnosis.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      quickActions: [
+        { label: '✨ Latest Uploads', action: () => handleSend("What are the latest products uploaded?") },
+        { label: '📱 Browse iPhones', action: () => openCategory('iphones') },
+        { label: '💻 Laptops & MacBooks', action: () => openCategory('laptops') },
+        { label: '🛠️ Free Repair Quote', action: () => goToRepairs() },
+      ],
+    },
+  ]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isOpen) scrollToBottom();
+  }, [messages, isOpen, isTyping]);
 
   return (
     <>
-      {/* ── Floating Launcher with Glowing Cisco AI Avatar ── */}
+      {/* Floating Launcher with Glowing Cisco AI Avatar */}
       <div className="fixed bottom-5 right-5 z-50">
         <motion.button
           type="button"
@@ -249,7 +327,6 @@ export const ChatWidget: React.FC = () => {
           className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-jt-blue to-jt-blue-soft text-white shadow-[0_8px_25px_rgba(54,38,167,0.45)] border border-jt-mint/30"
           aria-label="Open Cisco AI Chat"
         >
-          {/* Animated Glow Rings */}
           <span className="absolute -inset-1 animate-pulse rounded-full bg-jt-mint/25 blur-sm" />
           <span className="relative flex h-full w-full items-center justify-center">
             {isOpen ? (
@@ -267,7 +344,7 @@ export const ChatWidget: React.FC = () => {
         </motion.button>
       </div>
 
-      {/* ── Chat Modal Window ── */}
+      {/* Chat Modal Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -277,7 +354,7 @@ export const ChatWidget: React.FC = () => {
             transition={{ duration: 0.25, ease: 'easeOut' }}
             className="fixed bottom-22 right-4 z-50 flex h-[540px] max-h-[82vh] w-[calc(100vw-32px)] max-w-[390px] flex-col overflow-hidden rounded-3xl border border-jt-blue/20 bg-white shadow-2xl dark:border-white/15 dark:bg-[#121620]"
           >
-            {/* Header with Glowing Cisco Avatar */}
+            {/* Header */}
             <div className="relative flex items-center justify-between bg-gradient-to-r from-jt-blue via-jt-blue-deep to-jt-ink px-4 py-3.5 text-white">
               <div className="flex items-center gap-3">
                 <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-jt-mint/40 bg-jt-mint/15 shadow-[0_0_15px_rgba(0,240,255,0.3)]">
@@ -291,7 +368,7 @@ export const ChatWidget: React.FC = () => {
                       AI Assistant
                     </span>
                   </div>
-                  <p className="text-[11px] text-jt-steel">Online now · Always happy to help</p>
+                  <p className="text-[11px] text-jt-steel">Live Inventory Synced · Ready to help</p>
                 </div>
               </div>
 
@@ -311,7 +388,7 @@ export const ChatWidget: React.FC = () => {
                   key={m.id}
                   className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
                 >
-                  <div className="flex items-end gap-2 max-w-[86%]">
+                  <div className="flex items-end gap-2 max-w-[88%]">
                     {m.sender === 'cisco' && (
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-jt-blue/15 text-jt-blue dark:bg-jt-mint/15 dark:text-jt-mint">
                         <Bot size={13} />
@@ -324,11 +401,21 @@ export const ChatWidget: React.FC = () => {
                           : 'rounded-bl-none border border-jt-ink/8 bg-white text-jt-ink shadow-sm dark:border-white/10 dark:bg-jt-ink-soft dark:text-white'
                       }`}
                     >
-                      <p className="whitespace-pre-line">{m.text}</p>
+                      <p className="whitespace-pre-line">
+                        {m.text.replace(/\*\*/g, '').split(/(Cisco)/gi).map((part, index) =>
+                          part.toLowerCase() === 'cisco' ? (
+                            <strong key={index} className="font-bold text-jt-blue dark:text-jt-mint">
+                              {part}
+                            </strong>
+                          ) : (
+                            part
+                          )
+                        )}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Quick Action Pills */}
+                  {/* Quick Action Buttons */}
                   {m.quickActions && m.quickActions.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5 pl-8">
                       {m.quickActions.map((qa, i) => (
@@ -365,7 +452,7 @@ export const ChatWidget: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Bar */}
+            {/* Input Form */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -376,7 +463,7 @@ export const ChatWidget: React.FC = () => {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Cisco anything..."
+                placeholder="Ask about new arrivals, specs, repairs..."
                 className="flex-1 bg-transparent px-3 py-2 text-xs text-jt-ink placeholder:text-jt-steel focus:outline-none dark:text-white"
               />
               <button
