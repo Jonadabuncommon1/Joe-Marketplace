@@ -1,31 +1,54 @@
 import React, { useState } from 'react';
-import { X, UploadCloud, Loader2 } from 'lucide-react';
+import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag } from 'lucide-react';
 import { marketplaceCategories } from '../../data';
 import { uploadImage } from '../../lib/supabase';
 import { useAppContext } from '../../store/AppContext';
-import { Product } from '../../types';
 
 export type FormState = {
   name: string;
   category: string;
   price: string;
+  originalPrice: string;
   description: string;
   images: string[];
-  isNew: boolean;
+  condition: string;
+  isHot: boolean;
   isTrending: boolean;
+  isFeatured: boolean;
+  isNew: boolean;
+  badge: string;
   colors: string[];
 };
 
-export const AVAILABLE_COLORS = ['Red', 'Blue', 'Green', 'Black', 'White', 'Yellow', 'Pink', 'Purple', 'Orange', 'Grey', 'Brown', 'Silver', 'Gold'];
+export const AVAILABLE_COLORS = [
+  'Space Grey',
+  'Silver',
+  'Gold',
+  'Midnight',
+  'Starlight',
+  'Deep Purple',
+  'Titanium Black',
+  'Natural Titanium',
+  'Blue',
+  'Red',
+  'Green',
+  'White',
+  'Black',
+];
 
 export const emptyForm = (): FormState => ({
   name: '',
-  category: marketplaceCategories.find((c) => !c.isService)?.name || '',
+  category: marketplaceCategories.find((c) => !c.isService)?.name || 'iPhones & iPads',
   price: '',
+  originalPrice: '',
   description: '',
   images: [],
-  isNew: false,
+  condition: 'UK Used',
+  isHot: false,
   isTrending: false,
+  isFeatured: false,
+  isNew: false,
+  badge: '',
   colors: [],
 });
 
@@ -36,7 +59,12 @@ interface ProductUploadFormProps {
   onSuccess: () => void;
 }
 
-export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId, initialForm, onClose, onSuccess }) => {
+export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
+  editingId,
+  initialForm,
+  onClose,
+  onSuccess,
+}) => {
   const { addProduct, updateProduct } = useAppContext();
   const [form, setForm] = useState<FormState>(initialForm);
   const [formError, setFormError] = useState('');
@@ -47,6 +75,8 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     const price = Number(form.price);
+    const originalPrice = form.originalPrice ? Number(form.originalPrice) : undefined;
+
     if (!form.name.trim()) {
       setFormError('Product name is required.');
       return;
@@ -65,7 +95,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
 
     try {
       const uploadedUrls: string[] = [...form.images];
-      
+
       for (const file of selectedFiles) {
         try {
           const url = await uploadImage(file);
@@ -77,21 +107,26 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
         }
       }
 
-      const payload = {
+      const payload: any = {
         name: form.name.trim(),
         category: form.category,
         price,
+        originalPrice,
         description: form.description.trim() || 'Premium listing from Joe Tech.',
         images: uploadedUrls,
-        isNew: form.isNew,
+        condition: form.condition,
+        isHot: form.isHot,
         isTrending: form.isTrending,
+        isFeatured: form.isFeatured,
+        isNew: form.isNew,
+        badge: form.badge.trim() || undefined,
         colors: form.colors.length > 0 ? form.colors : undefined,
       };
 
       if (editingId) {
-        await updateProduct(editingId, payload);
+        await (updateProduct as any)(editingId, payload);
       } else {
-        await addProduct(payload);
+        await (addProduct as any)(payload);
       }
 
       onSuccess();
@@ -104,28 +139,37 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Dimmed Background Overlay */}
-      <div 
-        className="absolute inset-0 bg-white dark:bg-black/40 backdrop-blur-sm transition-opacity" 
+      {/* Background Overlay */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Sliding Drawer */}
       <form
         onSubmit={handlePublish}
-        className="relative w-full md:w-[600px] h-full bg-white dark:bg-[#0a0a0a] shadow-2xl flex flex-col transform transition-transform duration-300"
+        className="relative w-full md:w-[640px] h-full bg-white dark:bg-[#0a0a0a] shadow-2xl flex flex-col transform transition-transform duration-300"
       >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-white/10 shrink-0">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-800 dark:text-white">
-            {editingId ? 'Edit Product' : 'Add New Product'}
-          </h2>
-          <button type="button" onClick={onClose} className="text-gray-500 dark:text-gray-400 dark:text-gray-800 dark:text-white hover:text-gray-900 dark:hover:text-gray-800 dark:text-white transition-colors p-1">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {editingId ? 'Edit Product Listing' : 'Add New Product'}
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Configure inventory pricing, home showcase placements, and specs
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors p-1"
+          >
             <X size={20} />
           </button>
         </div>
 
-        {/* Scrollable Content */}
+        {/* Scrollable Form Content */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
           {formError && (
             <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-lg px-4 py-3 flex items-center">
@@ -134,24 +178,31 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
           )}
 
           <div className="space-y-6">
+            {/* Title */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider text-xs">Product Name</label>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Product Name
+              </label>
               <input
                 type="text"
                 required
+                placeholder="e.g. iPhone 15 Pro Max 256GB"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-800 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] focus:ring-2 focus:ring-[#3626a7]/20 transition-all shadow-sm"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] focus:ring-2 focus:ring-[#3626a7]/20 transition-all shadow-sm text-sm"
               />
             </div>
 
+            {/* Category & Condition */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider text-xs">Category</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Category
+                </label>
                 <select
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-800 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] focus:ring-2 focus:ring-[#3626a7]/20 transition-all shadow-sm"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] text-sm shadow-sm"
                 >
                   {marketplaceCategories
                     .filter((c) => !c.isService)
@@ -162,48 +213,138 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
                     ))}
                 </select>
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider text-xs">Price (₦)</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Condition
+                </label>
+                <select
+                  value={form.condition}
+                  onChange={(e) => setForm({ ...form, condition: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] text-sm shadow-sm"
+                >
+                  <option value="UK Used">Clean UK Used</option>
+                  <option value="Brand New">Brand New Sealed</option>
+                  <option value="Refurbished">Certified Refurbished</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Selling Price (₦)
+                </label>
                 <input
                   type="number"
                   required
                   min={1}
+                  placeholder="e.g. 850000"
                   value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-800 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] focus:ring-2 focus:ring-[#3626a7]/20 transition-all shadow-sm"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] text-sm shadow-sm font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Original Price (₦ Strikethrough)
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 950000"
+                  value={form.originalPrice}
+                  onChange={(e) => setForm({ ...form, originalPrice: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] text-sm shadow-sm"
                 />
               </div>
             </div>
 
-            <div className="flex gap-6 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 p-4 rounded-xl shadow-sm">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.isTrending}
-                  onChange={(e) => setForm({ ...form, isTrending: e.target.checked })}
-                  className="w-4 h-4 brand-text rounded border-gray-300 focus:ring-[#3626a7]"
-                />
-                Trending
+            {/* Placements & Showcase Controls */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+                Storefront Placements
               </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 dark:bg-[#15171e] border border-gray-200 dark:border-white/10 p-4 rounded-xl shadow-sm">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer p-2 rounded-lg hover:bg-amber-500/10 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.isHot}
+                    onChange={(e) => setForm({ ...form, isHot: e.target.checked })}
+                    className="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
+                  />
+                  <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                    <Flame size={14} /> Hot Deals
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer p-2 rounded-lg hover:bg-purple-500/10 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.isTrending}
+                    onChange={(e) => setForm({ ...form, isTrending: e.target.checked })}
+                    className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                  />
+                  <span className="flex items-center gap-1 text-purple-700 dark:text-purple-400">
+                    <Zap size={14} /> Trending
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer p-2 rounded-lg hover:bg-blue-500/10 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.isFeatured}
+                    onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
+                    <Star size={14} /> Featured
+                  </span>
+                </label>
+              </div>
             </div>
 
+            {/* Custom Tag / Badge */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Custom Promo Badge
+              </label>
+              <div className="relative">
+                <Tag size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="e.g. -25% OFF, TOP SELLER"
+                  value={form.badge}
+                  onChange={(e) => setForm({ ...form, badge: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] text-sm shadow-sm"
+                />
+              </div>
+            </div>
+
+            {/* Colors */}
             <div className="relative">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider text-xs">Colors</label>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Colors
+              </label>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-800 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] focus:ring-2 focus:ring-[#3626a7]/20 transition-all shadow-sm text-left flex justify-between items-center"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] transition-all shadow-sm text-left flex justify-between items-center text-sm"
                 >
                   <span className="truncate">
-                    {form.colors.length > 0 ? form.colors.join(', ') : 'Select colors...'}
+                    {form.colors.length > 0 ? form.colors.join(', ') : 'Select colors in stock...'}
                   </span>
                   <span className="text-gray-400 text-xs">▼</span>
                 </button>
                 {isColorDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 custom-scrollbar">
-                    {AVAILABLE_COLORS.map(c => (
-                      <label key={c} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-[#222] rounded-lg cursor-pointer transition-colors">
+                  <div className="absolute z-20 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 custom-scrollbar">
+                    {AVAILABLE_COLORS.map((c) => (
+                      <label
+                        key={c}
+                        className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-[#222] rounded-lg cursor-pointer transition-colors"
+                      >
                         <input
                           type="checkbox"
                           checked={form.colors.includes(c)}
@@ -211,12 +352,17 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
                             if (e.target.checked) {
                               setForm({ ...form, colors: [...form.colors, c] });
                             } else {
-                              setForm({ ...form, colors: form.colors.filter(col => col !== c) });
+                              setForm({
+                                ...form,
+                                colors: form.colors.filter((col) => col !== c),
+                              });
                             }
                           }}
-                          className="w-4 h-4 brand-text rounded border-gray-300 focus:ring-[#3626a7]"
+                          className="w-4 h-4 rounded border-gray-300 text-[#3626a7] focus:ring-[#3626a7]"
                         />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{c}</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {c}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -224,21 +370,30 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
               </div>
             </div>
 
+            {/* Description */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider text-xs">Description</label>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Description & Specs
+              </label>
               <textarea
-                rows={4}
+                rows={3}
+                placeholder="Include storage, battery health, warranty..."
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-800 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] focus:ring-2 focus:ring-[#3626a7]/20 transition-all shadow-sm resize-none"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:border-[#3626a7] transition-all shadow-sm resize-none text-sm"
               />
             </div>
 
+            {/* Images */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider text-xs">Product Images (Max 5)</label>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Product Images (Max 5)
+              </label>
               <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-6 bg-gray-50 dark:bg-[#1a1a1a] text-center transition-colors hover:bg-gray-100 dark:hover:bg-[#222]">
-                <UploadCloud size={32} className="brand-text mx-auto mb-3" />
-                <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-800 dark:text-white mb-4 font-medium">Click to select files from your device</p>
+                <UploadCloud size={32} className="text-[#3626a7] mx-auto mb-2" />
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 font-medium">
+                  Select device images
+                </p>
                 <input
                   type="file"
                   multiple
@@ -253,31 +408,45 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
                     setFormError('');
                     setSelectedFiles((prev) => [...prev, ...files]);
                   }}
-                  className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#3626a7] file:text-white hover:file:bg-[#281c7d] cursor-pointer transition-colors"
+                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#3626a7] file:text-white hover:file:bg-[#281c7d] cursor-pointer"
                 />
-                
-                <div className="mt-6 grid grid-cols-4 gap-3">
+
+                <div className="mt-4 grid grid-cols-5 gap-2">
                   {form.images.map((url, idx) => (
-                    <div key={`existing-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-sm group">
+                    <div
+                      key={`existing-${idx}`}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 group"
+                    >
                       <img src={url} alt="" className="w-full h-full object-cover" />
                       <button
                         type="button"
-                        onClick={() => setForm({ ...form, images: form.images.filter((_, i) => i !== idx) })}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow-md"
+                        onClick={() =>
+                          setForm({ ...form, images: form.images.filter((_, i) => i !== idx) })
+                        }
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow"
                       >
-                        <X size={14} />
+                        <X size={12} />
                       </button>
                     </div>
                   ))}
                   {selectedFiles.map((file, idx) => (
-                    <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-[#3626a7] shadow-sm group">
-                      <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                    <div
+                      key={`new-${idx}`}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-[#3626a7] group"
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                       <button
                         type="button"
-                        onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow-md"
+                        onClick={() =>
+                          setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))
+                        }
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow"
                       >
-                        <X size={14} />
+                        <X size={12} />
                       </button>
                     </div>
                   ))}
@@ -287,24 +456,24 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({ editingId,
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-200 dark:border-white/10 flex justify-end space-x-4 bg-gray-50 dark:bg-[#0f0f0f] shrink-0">
+        {/* Footer Actions */}
+        <div className="p-6 border-t border-gray-200 dark:border-white/10 flex justify-end space-x-3 bg-gray-50 dark:bg-[#0f0f0f] shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-[#222] transition-colors focus:outline-none"
+            className="px-5 py-2.5 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#222]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isUploading}
-            className="px-6 py-3 bg-[#3626a7] hover:bg-[#281c7d] text-white rounded-xl text-sm font-bold flex items-center space-x-2 disabled:opacity-50 shadow-md shadow-[#3626a7]/20 transition-colors focus:outline-none"
+            className="px-6 py-2.5 bg-[#3626a7] hover:bg-[#281c7d] text-white rounded-xl text-xs font-bold flex items-center space-x-2 disabled:opacity-50 shadow-md shadow-[#3626a7]/20 transition-all"
           >
             {isUploading ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>Saving...</span>
+                <Loader2 size={15} className="animate-spin" />
+                <span>Saving Product...</span>
               </>
             ) : (
               <span>{editingId ? 'Save Changes' : 'Publish Product'}</span>
