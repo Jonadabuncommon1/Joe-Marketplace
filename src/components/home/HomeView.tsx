@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
 import {
   ArrowRight,
@@ -114,12 +114,12 @@ const SectionHeading: React.FC<{
 /* Staggered Slot-Machine Reel Card Component                                 */
 /* ────────────────────────────────────────────────────────────────────────── */
 
-const ReelSlotCard: React.FC<{
+const ReelSlotCard = memo<{
   pool: Product[];
   startIndex: number;
   staggerDelay: number;
   onOpen: (p: Product) => void;
-}> = ({ pool, startIndex, staggerDelay, onOpen }) => {
+}>(({ pool, startIndex, staggerDelay, onOpen }) => {
   const [currentIndex, setCurrentIndex] = useState(startIndex % (pool.length || 1));
 
   useEffect(() => {
@@ -180,26 +180,28 @@ const ReelSlotCard: React.FC<{
       </AnimatePresence>
     </div>
   );
-};
+});
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* 3D Flip Card Component for Hot Deals (3.5 Minutes / 210000ms Interval)     */
+/* 3D Flip Card Component for Hot Deals (1 MINUTE / 60000ms TIMER)            */
 /* ────────────────────────────────────────────────────────────────────────── */
 
-const FlipDealCard: React.FC<{
+const FlipDealCard = memo<{
   pool: Product[];
   startIndex: number;
   staggerDelay: number;
   onOpen: (p: Product) => void;
-}> = ({ pool, startIndex, staggerDelay, onOpen }) => {
+}>(({ pool, startIndex, staggerDelay, onOpen }) => {
   const [index, setIndex] = useState(startIndex % (pool.length || 1));
 
   useEffect(() => {
     if (pool.length <= 1) return;
+    
+    // Exactly 1 minute (60,000ms) interval
     const timeout = setTimeout(() => {
       const interval = setInterval(() => {
         setIndex((prev) => (prev + 1) % pool.length);
-      }, 210000);
+      }, 60000);
       return () => clearInterval(interval);
     }, staggerDelay);
 
@@ -248,7 +250,7 @@ const FlipDealCard: React.FC<{
       </AnimatePresence>
     </div>
   );
-};
+});
 
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Hero                                                                       */
