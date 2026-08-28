@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-// Mock data matching your deals list
 const deals = [
   {
     id: 1,
@@ -44,14 +43,28 @@ const deals = [
     badge: "HOT",
     category: "wearables",
   },
+  {
+    id: 7,
+    title: "Sony WH-1000XM5",
+    price: "₦420,000",
+    badge: "HOT",
+    category: "audio",
+  },
+  {
+    id: 8,
+    title: "Dell XPS 15 OLED",
+    price: "₦2,100,000",
+    badge: "HOT",
+    category: "laptop",
+  },
 ];
 
 export const HotDeals: React.FC = () => {
   const [startIndex, setStartIndex] = useState(0);
 
-  // Auto-rotation timer set to 3 minutes and 30 seconds (210,000ms)
+  // Auto-rotation timer: 3 minutes and 30 seconds (210,000ms)
   useEffect(() => {
-    const ROTATION_INTERVAL = 210000; // 3.5 minutes
+    const ROTATION_INTERVAL = 210000;
 
     const timer = setInterval(() => {
       setStartIndex((prevIndex) => (prevIndex + 4) % deals.length);
@@ -60,7 +73,10 @@ export const HotDeals: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const visibleDeals = deals.slice(startIndex, startIndex + 4);
+  // Ensures exactly 4 cards are displayed without truncation
+  const visibleDeals = Array.from({ length: 4 }, (_, i) => 
+    deals[(startIndex + i) % deals.length]
+  );
 
   return (
     <div className="w-full max-w-sm rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
