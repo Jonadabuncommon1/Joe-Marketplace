@@ -111,7 +111,7 @@ const SectionHeading: React.FC<{
 );
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* Staggered Slot-Machine Reel Card Component                                */
+/* Staggered Slot-Machine Reel Card Component                                 */
 /* ────────────────────────────────────────────────────────────────────────── */
 
 const ReelSlotCard: React.FC<{
@@ -183,7 +183,7 @@ const ReelSlotCard: React.FC<{
 };
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* 3D Flip Card Component for Hot Deals                                       */
+/* 3D Flip Card Component for Hot Deals (3.5 Minutes / 210000ms Interval)     */
 /* ────────────────────────────────────────────────────────────────────────── */
 
 const FlipDealCard: React.FC<{
@@ -199,7 +199,7 @@ const FlipDealCard: React.FC<{
     const timeout = setTimeout(() => {
       const interval = setInterval(() => {
         setIndex((prev) => (prev + 1) % pool.length);
-      }, 3200);
+      }, 210000);
       return () => clearInterval(interval);
     }, staggerDelay);
 
@@ -505,7 +505,7 @@ const Hero: React.FC<{
             </motion.button>
           </div>
 
-          {/* Sidebar: Hot Deals (Corner sparkle removed) */}
+          {/* Sidebar: Hot Deals */}
           <motion.div
             variants={fadeUp}
             initial="hidden"

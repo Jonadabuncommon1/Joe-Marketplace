@@ -62,18 +62,15 @@ const deals = [
 export const HotDeals: React.FC = () => {
   const [startIndex, setStartIndex] = useState(0);
 
-  // Auto-rotation timer: 3 minutes and 30 seconds (210,000ms)
+  // Exact 3 minutes and 30 seconds interval (210,000ms)
   useEffect(() => {
-    const ROTATION_INTERVAL = 210000;
-
     const timer = setInterval(() => {
       setStartIndex((prevIndex) => (prevIndex + 4) % deals.length);
-    }, ROTATION_INTERVAL);
+    }, 210000);
 
     return () => clearInterval(timer);
   }, []);
 
-  // Ensures exactly 4 cards are displayed without truncation
   const visibleDeals = Array.from({ length: 4 }, (_, i) => 
     deals[(startIndex + i) % deals.length]
   );
@@ -88,12 +85,12 @@ export const HotDeals: React.FC = () => {
         </h2>
       </div>
 
-      {/* Product Grid */}
+      {/* Product Grid - Fixed slot keys [0,1,2,3] prevent unwanted flip re-triggers */}
       <div className="grid grid-cols-2 gap-3">
-        {visibleDeals.map((deal) => (
+        {visibleDeals.map((deal, slotIndex) => (
           <div
-            key={deal.id}
-            className="flex flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br from-red-50/50 via-purple-50/30 to-blue-50/50 p-3 transition-all duration-500 hover:shadow-md"
+            key={slotIndex}
+            className="flex flex-col justify-between overflow-hidden rounded-2xl bg-slate-50/80 p-3 border border-slate-100/80 hover:shadow-md transition-all duration-300"
           >
             {/* Hot Badge */}
             <div className="flex items-center">
