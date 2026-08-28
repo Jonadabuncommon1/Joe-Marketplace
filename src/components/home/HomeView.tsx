@@ -611,7 +611,8 @@ export const HomeView: React.FC = () => {
       featured: (trending.length > 0 ? trending : products).slice(0, 8),
       hiddenTrendingCount: Math.max(products.length - 8, 0),
       categoryCounts: counts,
-      hotDeals: trending.length > 0 ? trending : products,
+      // Pass the entire products array so the 4 slots rotate through all items
+      hotDeals: products.length > 0 ? products : trending,
     };
   }, [products]);
 
