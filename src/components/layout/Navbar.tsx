@@ -106,7 +106,7 @@ export const Navbar = () => {
               className="flex items-center cursor-pointer group relative" 
               onClick={() => handleNavClick('home')}
             >
-              <LogoLockup className="h-10 transition-transform duration-300 group-hover:scale-105 sm:h-12 md:h-13" />
+              <LogoLockup className="h-12 transition-transform duration-300 group-hover:scale-105 sm:h-14 md:h-16" />
             </div>
           </div>
 
@@ -301,7 +301,7 @@ export const Navbar = () => {
                   className="flex items-center cursor-pointer"
                   onClick={() => handleNavClick('home')}
                 >
-                  <LogoLockup className="h-10 md:h-12" />
+                  <LogoLockup className="h-12 md:h-14" />
                 </div>
                 <button
                   type="button"

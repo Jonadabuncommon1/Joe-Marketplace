@@ -78,7 +78,7 @@ export const Footer = () => {
         <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-3 lg:gap-8">
           <div>
             <div className="mb-4 flex items-center">
-              <LogoLockup className="h-16 md:h-20" />
+              <LogoLockup className="h-20 md:h-24" />
             </div>
             <p className="mb-4 text-sm leading-relaxed text-jt-ink/70 dark:text-jt-steel">
               Phones, laptops, gaming gear and solar power, sourced, tested and backed by real people

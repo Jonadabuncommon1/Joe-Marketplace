@@ -183,32 +183,15 @@ const ReelSlotCard = memo<{
 });
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* 3D Flip Card Component for Hot Deals (1 MINUTE / 60000ms TIMER)            */
+/* 3D Flip Card for Hot Deals. Purely presentational, the parent Hero owns    */
+/* the shared rotation index so every slot advances together and the dot     */
+/* indicators below the grid mean something.                                 */
 /* ────────────────────────────────────────────────────────────────────────── */
 
 const FlipDealCard = memo<{
-  pool: Product[];
-  startIndex: number;
-  staggerDelay: number;
+  product: Product | undefined;
   onOpen: (p: Product) => void;
-}>(({ pool, startIndex, staggerDelay, onOpen }) => {
-  const [index, setIndex] = useState(startIndex % (pool.length || 1));
-
-  useEffect(() => {
-    if (pool.length <= 1) return;
-    
-    // Exactly 1 minute (60,000ms) interval
-    const timeout = setTimeout(() => {
-      const interval = setInterval(() => {
-        setIndex((prev) => (prev + 1) % pool.length);
-      }, 60000);
-      return () => clearInterval(interval);
-    }, staggerDelay);
-
-    return () => clearTimeout(timeout);
-  }, [pool.length, staggerDelay]);
-
-  const product = pool[index];
+}>(({ product, onOpen }) => {
   if (!product) return null;
 
   return (
@@ -294,11 +277,26 @@ const Hero: React.FC<{
 }> = ({ onShop, onRepairs, onSearch, onCategory, categoryCounts, hotDeals, onOpenProduct }) => {
   const [index, setIndex] = useState(0);
   const [query, setQuery] = useState('');
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const id = setInterval(() => setIndex((i) => (i + 1) % HERO_ROTATION.length), 2400);
     return () => clearInterval(id);
   }, []);
+
+  // Hot Deals: a shared "page" index so all 4 slots flip together and the
+  // dots below them mean something, instead of four independent timers
+  // drifting out of sync with nothing showing overall progress.
+  const DEAL_PAGE_SIZE = 4;
+  const dealPageCount = Math.max(1, Math.ceil(hotDeals.length / DEAL_PAGE_SIZE));
+  const [dealPage, setDealPage] = useState(0);
+  const [dealsPaused, setDealsPaused] = useState(false);
+
+  useEffect(() => {
+    if (dealPageCount <= 1 || reduceMotion || dealsPaused) return;
+    const id = setInterval(() => setDealPage((p) => (p + 1) % dealPageCount), 4000);
+    return () => clearInterval(id);
+  }, [dealPageCount, reduceMotion, dealsPaused]);
 
   return (
     <section className="relative w-full max-w-full overflow-hidden bg-jt-paper pb-8 pt-20 text-jt-ink dark:bg-jt-ink dark:text-white sm:pb-14 sm:pt-26">
@@ -512,6 +510,8 @@ const Hero: React.FC<{
             variants={fadeUp}
             initial="hidden"
             animate="show"
+            onMouseEnter={() => setDealsPaused(true)}
+            onMouseLeave={() => setDealsPaused(false)}
             className="w-full rounded-3xl border border-jt-ink/8 bg-white p-4 dark:border-white/10 dark:bg-jt-ink-soft/60 lg:sticky lg:top-24"
           >
             <div className="mb-3 flex items-center justify-between">
@@ -521,18 +521,35 @@ const Hero: React.FC<{
               </span>
             </div>
 
-            {/* 4 Interactive 3D Flip Deal Slots */}
+            {/* 4 Interactive 3D Flip Deal Slots, all flipping to the same page */}
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               {[0, 1, 2, 3].map((slot) => (
                 <FlipDealCard
                   key={slot}
-                  pool={hotDeals}
-                  startIndex={slot}
-                  staggerDelay={slot * 450}
+                  product={hotDeals[dealPage * DEAL_PAGE_SIZE + slot]}
                   onOpen={onOpenProduct}
                 />
               ))}
             </div>
+
+            {dealPageCount > 1 && (
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                {Array.from({ length: dealPageCount }).map((_, page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setDealPage(page)}
+                    aria-label={`Show hot deals page ${page + 1}`}
+                    aria-current={page === dealPage}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      page === dealPage
+                        ? 'w-5 bg-jt-blue dark:bg-jt-mint'
+                        : 'w-1.5 bg-jt-ink/15 hover:bg-jt-ink/30 dark:bg-white/15 dark:hover:bg-white/30'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
 
             <button
               type="button"
@@ -597,22 +614,32 @@ export const HomeView: React.FC = () => {
     [setActiveCategory, setCurrentView],
   );
 
-  const { featured, hiddenTrendingCount, categoryCounts, hotDeals } = useMemo(() => {
-    const trending = products.filter((p) => p.isTrending);
+  const { available, featured, hiddenTrendingCount, categoryCounts, hotDeals } = useMemo(() => {
+    // The homepage's auto-rotating promo rails (Hot Deals, Trending, the
+    // category "N in stock" counts) all draw from what a shopper can
+    // actually buy right now, an item marked out of stock is left out
+    // rather than advertised somewhere it can't be checked out from.
+    const available = products.filter((p) => p.inStock !== false);
+    const trending = available.filter((p) => p.isTrending);
+    const hot = available.filter((p) => p.isHot);
+    // Prefer a curated set once there is enough of it to fill both dot
+    // pages, otherwise fall back a step so the rail is never sparse.
+    const dealsPool = hot.length >= 4 ? hot : trending.length >= 4 ? trending : available;
     const counts = marketplaceCategories.map((cat) => ({
       id: cat.id,
       name: cat.name,
       shortName: cat.shortName,
       icon: cat.icon,
       isService: cat.isService,
-      count: products.filter((p) => p.category === cat.name).length,
+      count: products.filter((p) => p.category === cat.name && p.inStock !== false).length,
     }));
     return {
-      featured: (trending.length > 0 ? trending : products).slice(0, 8),
-      hiddenTrendingCount: Math.max(products.length - 8, 0),
+      available,
+      featured: (trending.length > 0 ? trending : available).slice(0, 8),
+      hiddenTrendingCount: Math.max(available.length - 8, 0),
       categoryCounts: counts,
-      // Pass the entire products array so the 4 slots rotate through all items
-      hotDeals: products.length > 0 ? products : trending,
+      // Capped at 8, two dot-pages of four, rather than the whole catalog.
+      hotDeals: dealsPool.slice(0, 8),
     };
   }, [products]);
 
@@ -651,7 +678,7 @@ export const HomeView: React.FC = () => {
             {[0, 1, 2, 3].map((slotIndex) => (
               <ReelSlotCard
                 key={slotIndex}
-                pool={products}
+                pool={available}
                 startIndex={slotIndex * 2}
                 staggerDelay={slotIndex * 300}
                 onOpen={openProduct}

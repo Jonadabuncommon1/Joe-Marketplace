@@ -215,8 +215,14 @@ export const DashboardHome = ({ onChangeView }: { onChangeView: (view: AdminView
                     </td>
                     <td className="py-3 pr-4 font-bold text-[#000000] dark:text-gray-800 dark:text-white">{formatPrice(p.price)}</td>
                     <td className="py-3">
-                      <span className="text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded border border-green-200 dark:border-green-800/30">
-                        Active
+                      <span
+                        className={`text-xs font-medium px-2 py-0.5 rounded border ${
+                          p.inStock === false
+                            ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/30'
+                            : 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/30'
+                        }`}
+                      >
+                        {p.inStock === false ? 'Out of Stock' : 'Active'}
                       </span>
                     </td>
                   </tr>

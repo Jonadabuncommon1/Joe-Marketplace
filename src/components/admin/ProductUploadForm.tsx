@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag } from 'lucide-react';
+import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag, Ban, CheckCircle2 } from 'lucide-react';
 import { marketplaceCategories } from '../../data';
 import { uploadImage } from '../../lib/supabase';
 import { useAppContext } from '../../store/AppContext';
@@ -18,6 +18,7 @@ export type FormState = {
   isNew: boolean;
   badge: string;
   colors: string[];
+  inStock: boolean;
 };
 
 export const AVAILABLE_COLORS = [
@@ -50,6 +51,7 @@ export const emptyForm = (): FormState => ({
   isNew: false,
   badge: '',
   colors: [],
+  inStock: true,
 });
 
 interface ProductUploadFormProps {
@@ -121,6 +123,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
         isNew: form.isNew,
         badge: form.badge.trim() || undefined,
         colors: form.colors.length > 0 ? form.colors : undefined,
+        inStock: form.inStock,
       };
 
       if (editingId) {
@@ -228,6 +231,44 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
                   <option value="Refurbished">Certified Refurbished</option>
                 </select>
               </div>
+            </div>
+
+            {/* Availability */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Availability
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, inStock: true })}
+                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${
+                    form.inStock
+                      ? 'border-green-500 bg-green-50 text-green-800 dark:border-green-600 dark:bg-green-900/20 dark:text-green-300'
+                      : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-green-300 dark:border-white/10 dark:bg-[#1a1a1a] dark:text-gray-400'
+                  }`}
+                >
+                  <CheckCircle2 size={16} />
+                  In Stock
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, inStock: false })}
+                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${
+                    !form.inStock
+                      ? 'border-red-500 bg-red-50 text-red-800 dark:border-red-600 dark:bg-red-900/20 dark:text-red-300'
+                      : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-red-300 dark:border-white/10 dark:bg-[#1a1a1a] dark:text-gray-400'
+                  }`}
+                >
+                  <Ban size={16} />
+                  Out of Stock
+                </button>
+              </div>
+              {!form.inStock && (
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                  Shoppers will see an Out of Stock badge and cannot add this to cart until you switch it back.
+                </p>
+              )}
             </div>
 
             {/* Pricing */}

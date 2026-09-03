@@ -22,7 +22,17 @@ export interface Product {
   condition?: string;
   /** Services are quoted "from" a starting price rather than sold at a fixed one. */
   isService?: boolean;
+  /** false hides the buy actions and shows an Out of Stock badge everywhere the
+   *  product appears; unset/true means available, so existing rows default in. */
   inStock?: boolean;
+  /** Strikethrough price shown next to the current price when discounted. */
+  originalPrice?: number;
+  /** Surfaces the product in the homepage Hot Deals rail. */
+  isHot?: boolean;
+  /** Surfaces the product in the homepage Featured grid. */
+  isFeatured?: boolean;
+  /** Small custom promo tag, e.g. "-25% OFF", set from the admin upload form. */
+  badge?: string;
 }
 
 export interface Category {

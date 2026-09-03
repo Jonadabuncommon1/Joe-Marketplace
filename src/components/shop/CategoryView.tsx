@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { marketplaceCategories } from '../../data';
 import { ProductCard } from './ProductCard';
-import { GadgetIcon } from '../ui/ProductImage';
+import { CategoryStage } from './CategoryStage';
 import { useAppContext } from '../../store/AppContext';
 import { searchProducts } from '../../utils/searchProducts';
 import { Search, SlidersHorizontal, ChevronDown, ArrowLeft, ChevronRight } from 'lucide-react';
@@ -53,6 +53,16 @@ export const CategoryView = () => {
   const categoryData = marketplaceCategories.find(
     c => c.id === activeCategory || c.name === activeCategory
   );
+
+  // Photos for the banner slideshow, tied to the category itself rather
+  // than the (possibly search-filtered) grid below it, in-stock preferred.
+  const categoryImages = useMemo(() => {
+    if (!categoryData) return [] as string[];
+    const inCategory = products.filter((p) => p.category === categoryData.name && p.images?.length);
+    const inStock = inCategory.filter((p) => p.inStock !== false);
+    const pool = inStock.length > 0 ? inStock : inCategory;
+    return pool.flatMap((p) => p.images).slice(0, 5);
+  }, [products, categoryData]);
   const isGlobalSearch = searchSubmitted && searchQuery.trim().length > 0;
   const categoryName = isGlobalSearch
     ? `Search: "${searchQuery}"`
@@ -92,17 +102,13 @@ export const CategoryView = () => {
 
       {/* Category hero, icon tile in the category's brand gradient, matching the
           category grid on the categories page (there are no per-category photos yet). */}
-      <div
-        className={`relative h-[32vh] md:h-[36vh] w-full mb-12 flex items-center justify-center overflow-hidden bg-gradient-to-br ${
-          categoryData?.gradient || 'from-jt-blue to-jt-blue-deep'
-        }`}
-      >
-        <div className="absolute inset-0 circuit-grid opacity-25" />
-        <GadgetIcon
-          name={categoryData?.icon || 'Sparkles'}
-          className="relative h-24 w-24 text-white/90 drop-shadow-lg md:h-28 md:w-28"
-        />
-      </div>
+      <CategoryStage
+        images={categoryImages}
+        gradient={categoryData?.gradient || 'from-jt-blue to-jt-blue-deep'}
+        icon={categoryData?.icon || 'Sparkles'}
+        className="h-[32vh] md:h-[36vh] w-full mb-12"
+        fallbackIconClassName="h-24 w-24 md:h-28 md:w-28"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 

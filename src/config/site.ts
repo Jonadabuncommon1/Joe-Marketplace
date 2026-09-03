@@ -27,7 +27,7 @@ export const branches = [
   {
     id: 'nsukka',
     name: 'Nsukka Branch',
-    street: 'Akuroad Market',
+    street: 'Abuja Line, Akuroad Market',
     city: 'Nsukka',
     state: 'Enugu State',
     phone: contacts.primary,

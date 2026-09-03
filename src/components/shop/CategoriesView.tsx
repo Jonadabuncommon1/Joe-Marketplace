@@ -1,9 +1,9 @@
-import React from 'react';
 import { motion } from 'motion/react';
+import React, { useMemo } from 'react';
 import { marketplaceCategories } from '../../data';
 import { useAppContext } from '../../store/AppContext';
 import { ArrowLeft } from 'lucide-react';
-import { GadgetIcon } from '../ui/ProductImage';
+import { CategoryStage } from './CategoryStage';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -20,12 +20,25 @@ const cardVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 100, damping: 15 }
+    transition: { type: "spring" as const, stiffness: 100, damping: 15 }
   }
 };
 
 export const CategoriesView = () => {
-  const { setCurrentView, setActiveCategory, goBack } = useAppContext();
+  const { products, setCurrentView, setActiveCategory, goBack } = useAppContext();
+
+  // A handful of real product photos per category, in-stock ones preferred,
+  // so the tile reads as a live look at what is actually for sale.
+  const imagesByCategory = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const cat of marketplaceCategories) {
+      const inCategory = products.filter((p) => p.category === cat.name && p.images?.length);
+      const inStock = inCategory.filter((p) => p.inStock !== false);
+      const pool = inStock.length > 0 ? inStock : inCategory;
+      map[cat.id] = pool.flatMap((p) => p.images).slice(0, 5);
+    }
+    return map;
+  }, [products]);
 
   return (
     <div className="pt-32 pb-24 min-h-screen bg-transparent text-gray-900 dark:text-gray-100 relative transition-colors duration-500">
@@ -82,13 +95,12 @@ export const CategoriesView = () => {
                 }
               />
 
-              <div
-                className={`relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-br ${category.gradient}`}
-              >
-                <div className="absolute inset-0 circuit-grid opacity-25" />
-                <GadgetIcon
-                  name={category.icon}
-                  className="relative h-20 w-20 text-white/95 drop-shadow-lg transition-transform duration-500 group-hover:scale-110"
+              <div className="relative h-56 overflow-hidden [&_img]:transition-transform [&_img]:duration-500 group-hover:[&_img]:scale-110">
+                <CategoryStage
+                  images={imagesByCategory[category.id] || []}
+                  gradient={category.gradient}
+                  icon={category.icon}
+                  className="h-56"
                 />
               </div>
 

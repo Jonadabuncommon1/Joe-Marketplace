@@ -2,7 +2,7 @@ import React from 'react';
 import { Product } from '../../types';
 import { formatPrice } from '../../data';
 import { motion } from 'motion/react';
-import { ShoppingBag, Zap, MessageCircle } from 'lucide-react';
+import { Ban, ShoppingBag, Zap, MessageCircle } from 'lucide-react';
 import { useAppContext } from '../../store/AppContext';
 import { ProductImage } from '../ui/ProductImage';
 
@@ -13,6 +13,11 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { setActiveProductId, setCurrentView, addToCart } = useAppContext();
 
+  // Rows created before the stock toggle existed have no `inStock` value at
+  // all, so treat only an explicit `false` as unavailable, everything else
+  // (true or unset) reads as in stock.
+  const outOfStock = product.inStock === false;
+
   const handleView = () => {
     setActiveProductId(product.id);
     setCurrentView('product');
@@ -21,6 +26,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (outOfStock) return;
     addToCart({
       product,
       quantity: 1,
@@ -41,14 +47,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div>
         {/* Product Media Box */}
         <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50 dark:bg-white/5">
-          {/* Status Badges */}
-          {product.isNew && (
-            <div className="absolute left-2.5 top-2.5 z-10">
+          {/* Status Badges, stacked top-left so Out of Stock always wins the corner */}
+          <div className="absolute left-2.5 top-2.5 z-10 flex flex-col items-start gap-1.5">
+            {outOfStock && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-jt-ink/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm dark:bg-black/80">
+                <Ban className="h-3 w-3" /> Out of Stock
+              </span>
+            )}
+            {product.isNew && (
               <span className="inline-flex items-center gap-1 rounded-full bg-jt-blue px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
                 <Zap className="h-3 w-3 fill-current" /> New
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Product Image */}
           <div className="h-full w-full transform transition-transform duration-500 group-hover:scale-105">
@@ -64,18 +75,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           {/* Hover Quick Action Strip */}
           <div className="absolute inset-x-2 bottom-2 z-20 flex gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
-            <button 
-              type="button"
-              onClick={handleQuickAdd}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-jt-ink px-3 py-2.5 text-xs font-bold text-white shadow-lg transition-colors hover:bg-jt-blue dark:bg-white dark:text-jt-ink dark:hover:bg-jt-mint"
-              title="Add to cart"
-            >
-              <ShoppingBag className="h-3.5 w-3.5" />
-              <span>Add to Cart</span>
-            </button>
+            {outOfStock ? (
+              <span
+                className="flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-xl bg-gray-300 px-3 py-2.5 text-xs font-bold text-gray-600 shadow-lg dark:bg-white/20 dark:text-white/60"
+                title="Out of stock"
+              >
+                <Ban className="h-3.5 w-3.5" />
+                <span>Out of Stock</span>
+              </span>
+            ) : (
+              <button 
+                type="button"
+                onClick={handleQuickAdd}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-jt-ink px-3 py-2.5 text-xs font-bold text-white shadow-lg transition-colors hover:bg-jt-blue dark:bg-white dark:text-jt-ink dark:hover:bg-jt-mint"
+                title="Add to cart"
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+                <span>Add to Cart</span>
+              </button>
+            )}
 
             <a
-              href={`https://wa.me/2348133727813?text=${encodeURIComponent(`Hello Joe Tech, I want to inquire about ${product.name}`)}`}
+              href={`https://wa.me/2348133727813?text=${encodeURIComponent(
+                outOfStock
+                  ? `Hello Joe Tech, is ${product.name} back in stock?`
+                  : `Hello Joe Tech, I want to inquire about ${product.name}`,
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
@@ -113,9 +138,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {formatPrice(product.price)}
         </p>
 
-        <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-          In Stock
-        </span>
+        {outOfStock ? (
+          <span className="text-[11px] font-medium text-red-600 dark:text-red-400">
+            Out of Stock
+          </span>
+        ) : (
+          <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            In Stock
+          </span>
+        )}
       </div>
     </motion.div>
   );

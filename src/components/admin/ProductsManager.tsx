@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Flame, Zap, Star } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Flame, Zap, Star, Ban, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAppContext } from '../../store/AppContext';
 import { formatPrice } from '../../data';
 import { ProductUploadForm, FormState, emptyForm } from './ProductUploadForm';
@@ -19,14 +20,16 @@ export interface AdminProduct {
   isNew?: boolean;
   badge?: string;
   colors?: string[];
+  inStock?: boolean;
   created_at?: string;
   createdAt?: string;
   [key: string]: any;
 }
 
 export const ProductsManager = () => {
-  const { products, deleteProduct } = useAppContext();
+  const { products, updateProduct, deleteProduct } = useAppContext();
   const [search, setSearch] = useState('');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [currentForm, setCurrentForm] = useState<FormState>(emptyForm());
@@ -51,14 +54,35 @@ export const ProductsManager = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return productList;
-    return productList.filter(
-      (p) =>
+    return productList.filter((p) => {
+      const matchesSearch =
+        !q ||
         p.name.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
-        (p.description && p.description.toLowerCase().includes(q))
+        (p.description && p.description.toLowerCase().includes(q));
+      const inStock = p.inStock !== false;
+      const matchesStock =
+        stockFilter === 'all' || (stockFilter === 'in' ? inStock : !inStock);
+      return matchesSearch && matchesStock;
+    });
+  }, [productList, search, stockFilter]);
+
+  const stockCounts = useMemo(
+    () => ({
+      all: productList.length,
+      in: productList.filter((p) => p.inStock !== false).length,
+      out: productList.filter((p) => p.inStock === false).length,
+    }),
+    [productList],
+  );
+
+  const toggleStock = (product: AdminProduct) => {
+    const nextInStock = product.inStock === false;
+    updateProduct(product.id, { inStock: nextInStock });
+    toast.success(
+      nextInStock ? `${product.name} marked back in stock` : `${product.name} marked out of stock`,
     );
-  }, [productList, search]);
+  };
 
   const openAdd = () => {
     setEditingId(null);
@@ -82,6 +106,7 @@ export const ProductsManager = () => {
       isNew: !!product.isNew,
       badge: product.badge || '',
       colors: product.colors || [],
+      inStock: product.inStock !== false,
     });
     setIsModalOpen(true);
   };
@@ -128,6 +153,27 @@ export const ProductsManager = () => {
       </div>
 
       <div className="bg-white dark:bg-[#0a0a0a] p-4 text-gray-900 dark:text-gray-100 rounded-2xl border dark:border-white/10 shadow-sm space-y-4 transition-colors duration-500">
+        <div className="flex flex-wrap gap-2">
+          {([
+            { key: 'all' as const, label: 'All', count: stockCounts.all },
+            { key: 'in' as const, label: 'In Stock', count: stockCounts.in },
+            { key: 'out' as const, label: 'Out of Stock', count: stockCounts.out },
+          ]).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setStockFilter(tab.key)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                stockFilter === tab.key
+                  ? 'bg-[#3626a7] text-white'
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
+
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
@@ -216,9 +262,19 @@ export const ProductsManager = () => {
                       {formatWATDate(product.created_at || product.createdAt)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs font-medium px-2.5 py-0.5 rounded border border-green-200 dark:border-green-800/30">
-                        Active
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleStock(product)}
+                        title="Click to toggle availability"
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded border transition-colors ${
+                          product.inStock === false
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800/30 hover:bg-red-200 dark:hover:bg-red-900/50'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800/30 hover:bg-green-200 dark:hover:bg-green-900/50'
+                        }`}
+                      >
+                        {product.inStock === false ? <Ban size={11} /> : <CheckCircle2 size={11} />}
+                        {product.inStock === false ? 'Out of Stock' : 'In Stock'}
+                      </button>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button

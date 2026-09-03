@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../../store/AppContext';
 import { formatPrice } from '../../data';
-import { Heart, ChevronRight, MessageCircle, Star, ShoppingBag, ShieldCheck, Truck, Minus, Plus, ArrowLeft } from 'lucide-react';
+import { Ban, Heart, ChevronRight, MessageCircle, Star, ShoppingBag, ShieldCheck, Truck, Minus, Plus, ArrowLeft } from 'lucide-react';
 
 export const ProductDetailView = () => {
   const { activeProductId, setCurrentView, goBack, addToCart, wishlist, toggleWishlist, getProductById, user } = useAppContext();
@@ -38,8 +38,12 @@ export const ProductDetailView = () => {
   }
 
   const isWishlisted = wishlist.includes(product.id);
+  // Rows created before the stock toggle existed have no `inStock` value,
+  // so only an explicit `false` reads as unavailable.
+  const outOfStock = product.inStock === false;
 
   const handleAddToCart = () => {
+    if (outOfStock) return;
     addToCart({
       product,
       quantity,
@@ -62,7 +66,9 @@ export const ProductDetailView = () => {
     if (selectedColor) message += `🎨 *Color*: ${selectedColor}\n`;
     message += `🔢 *Quantity*: ${quantity}\n`;
     message += `💰 *Total Price*: *${formatPrice(product.price * quantity)}*\n\n`;
-    message += "Please let me know if this item is currently available. Thank you!";
+    message += outOfStock
+      ? "This item shows as out of stock, please let me know when it is back. Thank you!"
+      : "Please let me know if this item is currently available. Thank you!";
 
     const url = `https://wa.me/2348133727813?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -111,6 +117,11 @@ export const ProductDetailView = () => {
             </div>
             {/* Main Image */}
             <div className="flex-1 bg-[#ece9fa]/50 aspect-[4/5] md:aspect-[3/4] relative overflow-hidden rounded-2xl glass-card border border-gray-200">
+              {outOfStock && (
+                <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-jt-ink/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm dark:bg-black/80">
+                  <Ban className="h-3.5 w-3.5" /> Out of Stock
+                </span>
+              )}
               <AnimatePresence mode="wait">
                 <motion.img 
                   initial={{ opacity: 0 }}
@@ -245,17 +256,19 @@ export const ProductDetailView = () => {
               {/* Quantity */}
               <div>
                 <h3 className="text-xs uppercase tracking-widest font-bold text-gray-900 dark:text-gray-800 dark:text-white mb-4">Quantity</h3>
-                <div className="flex items-center space-x-6 glass border border-white/5 p-2 rounded-xl inline-flex shadow-none">
+                <div className={`flex items-center space-x-6 glass border border-white/5 p-2 rounded-xl inline-flex shadow-none ${outOfStock ? 'opacity-50' : ''}`}>
                   <button 
+                    disabled={outOfStock}
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#ece9fa] transition-colors text-gray-900 dark:text-gray-800 dark:text-white"
+                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#ece9fa] transition-colors text-gray-900 dark:text-gray-800 dark:text-white disabled:cursor-not-allowed disabled:hover:bg-transparent"
                   >
                     <Minus size={16} />
                   </button>
                   <span className="font-bold text-lg w-8 text-center text-gray-900 dark:text-gray-800 dark:text-white">{quantity}</span>
                   <button 
+                    disabled={outOfStock}
                     onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#ece9fa] transition-colors text-gray-900 dark:text-gray-800 dark:text-white"
+                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#ece9fa] transition-colors text-gray-900 dark:text-gray-800 dark:text-white disabled:cursor-not-allowed disabled:hover:bg-transparent"
                   >
                     <Plus size={16} />
                   </button>
@@ -268,10 +281,11 @@ export const ProductDetailView = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                   onClick={handleAddToCart}
-                  className="flex-1 bg-[#3626a7] text-white py-4 px-8 rounded-xl flex items-center justify-center space-x-2 uppercase text-sm tracking-widest font-bold hover:bg-[#281c7d] transition-colors"
+                  disabled={outOfStock}
+                  className="flex-1 bg-[#3626a7] text-white py-4 px-8 rounded-xl flex items-center justify-center space-x-2 uppercase text-sm tracking-widest font-bold hover:bg-[#281c7d] transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300 dark:disabled:bg-white/10"
                 >
-                  <ShoppingBag size={18} />
-                  <span>Add to Cart</span>
+                  {outOfStock ? <Ban size={18} /> : <ShoppingBag size={18} />}
+                  <span>{outOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
                 </button>
                 <button 
                   onClick={() => toggleWishlist(product.id)}
