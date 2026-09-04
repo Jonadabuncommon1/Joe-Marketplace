@@ -96,4 +96,30 @@ export const heroShots: HeroShot[] = [
   { src: '/hero/newage-connect-prime-11-duo-black.jpg', alt: 'New Age Connect Prime 11 Duo with Type C and Lightning ends' },
   { src: '/hero/newage-connect-prime-11-27w.jpg', alt: 'New Age Connect Prime 11 27W Type C to Lightning cable with its box' },
   { src: '/hero/itel-power-go-pro.jpg', alt: 'An itel Energy Power Go Pro portable power station' },
+
+  // ── Feature phones ──
+  { src: '/hero/itel-it2160-phones.jpg', alt: 'Boxes of itel it2160 feature phones with wireless FM' },
+  { src: '/hero/itel-it5627-metal-phones.jpg', alt: 'itel it5627 Metal feature phones with 70 day standby' },
+  { src: '/hero/tecno-t302-phones.jpg', alt: 'Tecno T302 feature phones in their boxes' },
+
+  // ── Budget Android and sealed stock ──
+  { src: '/hero/redmi-a7-and-17.jpg', alt: 'Redmi A7 and Redmi 17 phones stacked above itel power stations' },
+  { src: '/hero/redmi-17-stock.jpg', alt: 'Redmi 17 phones stacked on itel Power Go Pro units' },
+  { src: '/hero/sealed-phone-boxes.jpg', alt: 'A stack of sealed iPhone and Samsung boxes' },
+
+  // ── More laptops ──
+  { src: '/hero/macbook-air-open.jpg', alt: 'A MacBook Air open on a soft grey rug' },
+  { src: '/hero/dell-laptops.jpg', alt: 'A stack of Dell business laptops' },
+  { src: '/hero/surface-laptops-stacked.jpg', alt: 'Surface Laptops stacked, the top one running a game' },
+
+  // ── oraimo and BoomBest audio ──
+  { src: '/hero/oraimo-booming-bass-headphones.jpg', alt: 'oraimo Booming Bass wireless headphones' },
+  { src: '/hero/oraimo-airbuds-3.jpg', alt: 'oraimo Airbuds 3, waterproof true wireless earbuds' },
+  { src: '/hero/oraimo-necklace-lite-earphones.jpg', alt: 'oraimo Necklace Lite neckband earphones' },
+  { src: '/hero/boombest-ln1116plus-speaker.jpg', alt: 'BoomBest LN-1116Plus wireless speakers' },
+  { src: '/hero/boombest-ln5316bt-speaker.jpg', alt: 'BoomBest LN-5316BT wireless speakers' },
+  { src: '/hero/boombest-ln1028ant-speaker.jpg', alt: 'BoomBest LN-1028ANT wireless speakers with TF and USB' },
+
+  // ── itel power stations ──
+  { src: '/hero/itel-power-go-display.jpg', alt: 'itel Energy Power Go and Power Go Pro power stations on display' },
 ];
