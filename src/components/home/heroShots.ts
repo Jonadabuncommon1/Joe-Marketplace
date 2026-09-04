@@ -83,7 +83,6 @@ export const heroShots: HeroShot[] = [
   { src: '/hero/phone-gimbal-stabilizer.jpg', alt: 'A handheld gimbal holding a phone for smooth video', category: 'phone-accessories' },
   { src: '/hero/newage-power-bank-range.jpg', alt: 'The New Age power bank range: Turbo Ultra 6, Heavy Duty Nano and Heavy Duty', category: 'phone-accessories' },
   { src: '/hero/newage-power-banks-available.jpg', alt: 'New Age Turbo Ultra 3 and Y107 Pro Max power banks with a Connect Prime 9 cable', category: 'phone-accessories' },
-  { src: '/hero/newage-perfect-pair.jpg', alt: 'A New Age Y107 Pro Max power bank paired with a Connect Prime 11 Duo cable', category: 'phone-accessories' },
   { src: '/hero/newage-connect-prime-11-duo-orange.jpg', alt: 'New Age Connect Prime 11 Duo, a 65W two-in-one charging cable', category: 'phone-accessories' },
   { src: '/hero/newage-connect-prime-11-duo-silver.jpg', alt: 'New Age Connect Prime 11 Duo 65W braided cable', category: 'phone-accessories' },
   { src: '/hero/newage-connect-prime-11-duo-black.jpg', alt: 'New Age Connect Prime 11 Duo with Type C and Lightning ends', category: 'phone-accessories' },
