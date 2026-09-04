@@ -1,51 +1,156 @@
-import React from 'react';
-import { Battery, Star, Truck, Wifi, Wrench } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import { Star, Truck, Wrench } from 'lucide-react';
+import { heroShots, HeroShot } from './heroShots';
+
+/** How long each shot holds before the next one slides in. */
+const HOLD_MS = 3800;
+
+/** Length of the slide itself, and how long the outgoing shot is kept around. */
+const SLIDE_MS = 650;
 
 /**
- * Static hero art: a phone + laptop mockup with a couple of floating trust
- * badges, built entirely from CSS/SVG. Replaces the old animated isometric
- * canvas scene (IsoHeroScene) — that scene ran a continuous requestAnimationFrame
- * simulation (particles, glowing conduits, ~90 ambient motes) on every visit,
- * which was the main thing making the homepage feel heavy on slower devices
- * and connections. This costs one paint and stays that way; the only motion
- * is two long, cheap CSS float loops, both already gated on
- * prefers-reduced-motion in index.css.
+ * Hero art: real product shots sliding through a single frame, with a few
+ * floating trust badges over them. It replaced a static CSS phone/laptop
+ * mockup, which in turn replaced an animated canvas scene that ran a
+ * continuous requestAnimationFrame simulation on every visit and was the main
+ * thing making the homepage feel heavy on slower devices.
+ *
+ * So the slideshow is deliberately cheap: at most two shots are in the DOM at
+ * once (never all 32), exactly one more is warmed ahead of them, nothing loads
+ * or ticks below `lg` where the art is hidden anyway, a background tab doesn't
+ * advance, and the movement is transform/opacity only so it stays on the
+ * compositor.
+ *
+ * The outgoing shot is dropped on a timer rather than on an animation-complete
+ * callback, and that is deliberate. Browsers throttle requestAnimationFrame to
+ * a standstill for occluded windows while `document.hidden` stays false, so an
+ * animation-driven cleanup can simply never fire and leave slides piling up in
+ * the DOM. Timers keep running in that state, so the two-slot ceiling holds
+ * whether or not the animations themselves ever get to play.
  */
+
+/** Fisher-Yates over the shot indices. */
+function shuffleIndices(length: number): number[] {
+  const order = Array.from({ length }, (_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+}
+
+/**
+ * A running order for the next lap. Reshuffling on its own would still let a
+ * lap open on the shot the last one closed with, so the head gets swapped away
+ * when that happens: no shot ever follows itself, and the sequence genuinely
+ * differs every time round.
+ */
+function nextDeck(length: number, lastShown?: number): number[] {
+  const order = shuffleIndices(length);
+  if (order.length > 1 && order[0] === lastShown) {
+    const swap = 1 + Math.floor(Math.random() * (order.length - 1));
+    [order[0], order[swap]] = [order[swap], order[0]];
+  }
+  return order;
+}
+
 export const HeroVisual: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const reduceMotion = useReducedMotion();
+
+  // HomeView only renders this from `lg` up, so on phones we skip the timer and
+  // every image request rather than animating something nobody can see.
+  const [isWide, setIsWide] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e: MediaQueryListEvent) => setIsWide(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const deckRef = useRef({ order: nextDeck(heroShots.length), pos: 0 });
+
+  /** What the frame is showing: the shot sliding in, and the one sliding out. */
+  const [frame, setFrame] = useState<{ current: HeroShot; outgoing: HeroShot | null; lap: number }>(
+    () => ({ current: heroShots[deckRef.current.order[0]], outgoing: null, lap: 0 }),
+  );
+
+  useEffect(() => {
+    if (!isWide) return;
+    const id = window.setInterval(() => {
+      // A background tab shouldn't burn through the deck, or pull down images
+      // for slides nobody is looking at.
+      if (document.hidden) return;
+
+      const { order, pos } = deckRef.current;
+      const leaving = heroShots[order[pos]];
+      deckRef.current =
+        pos + 1 < order.length
+          ? { order, pos: pos + 1 }
+          : { order: nextDeck(order.length, order[pos]), pos: 0 };
+
+      const { order: nextOrder, pos: nextPos } = deckRef.current;
+      setFrame((f) => ({ current: heroShots[nextOrder[nextPos]], outgoing: leaving, lap: f.lap + 1 }));
+    }, HOLD_MS);
+    return () => window.clearInterval(id);
+  }, [isWide]);
+
+  // Retire the outgoing shot once it has had time to slide away, so the frame
+  // never holds more than the two slots.
+  useEffect(() => {
+    if (!frame.outgoing) return;
+    const id = window.setTimeout(
+      () => setFrame((f) => (f.lap === frame.lap ? { ...f, outgoing: null } : f)),
+      SLIDE_MS,
+    );
+    return () => window.clearTimeout(id);
+  }, [frame.lap, frame.outgoing]);
+
+  // Warm exactly one shot ahead, so a slide never lands on a blank frame and
+  // there are never more than two of these in flight.
+  useEffect(() => {
+    if (!isWide) return;
+    const { order, pos } = deckRef.current;
+    if (pos + 1 >= order.length) return;
+    const img = new Image();
+    img.src = heroShots[order[pos + 1]].src;
+  }, [isWide, frame.lap]);
+
   return (
-    <div className={`relative mx-auto w-full max-w-[420px] ${className}`} aria-hidden="true">
-      {/* Soft color wash behind the mockup, cheap radial blurs instead of a canvas glow */}
+    <div className={`relative mx-auto w-full max-w-[420px] ${className}`}>
+      {/* Soft color wash behind the frame, cheap radial blurs instead of a canvas glow */}
       <div className="pointer-events-none absolute -top-10 right-0 h-64 w-64 rounded-full bg-jt-blue/20 blur-[70px] dark:bg-jt-blue/25" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-52 w-52 rounded-full bg-jt-mint/20 blur-[60px] dark:bg-jt-mint/15" />
 
-      {/* Laptop card, peeking out behind the phone */}
-      <div className="animate-floating-delayed absolute right-2 top-10 w-[78%] rounded-2xl border border-jt-ink/10 bg-white/90 p-3 shadow-xl backdrop-blur dark:border-white/10 dark:bg-jt-ink-soft/90 sm:top-14">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-jt-blue/40" />
-          <span className="h-2 w-2 rounded-full bg-jt-mint/50" />
-          <span className="h-2 w-2 rounded-full bg-jt-ink/15 dark:bg-white/20" />
-        </div>
-        <div className="mt-3 h-24 w-full rounded-xl bg-gradient-to-br from-jt-blue/15 to-jt-mint/10 dark:from-jt-blue/25 dark:to-jt-mint/15" />
-        <div className="mt-3 h-2 w-3/4 rounded-full bg-jt-ink/10 dark:bg-white/15" />
-        <div className="mt-2 h-2 w-1/2 rounded-full bg-jt-ink/10 dark:bg-white/15" />
-      </div>
-
-      {/* Phone card, main focal shape */}
-      <div className="animate-floating relative ml-auto w-[64%] rounded-[2rem] border border-jt-ink/10 bg-white p-3 shadow-2xl dark:border-white/10 dark:bg-jt-ink-soft">
-        <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-jt-ink/15 dark:bg-white/20" />
-        <div className="aspect-[9/16] w-full overflow-hidden rounded-[1.4rem] bg-gradient-to-b from-jt-blue to-jt-blue-deep">
-          <div className="flex h-full flex-col justify-between p-4">
-            <div className="flex items-center justify-between text-white/80">
-              <Wifi className="h-3.5 w-3.5" />
-              <Battery className="h-3.5 w-3.5" />
-            </div>
-            <div>
-              <div className="mb-2 h-16 w-16 rounded-2xl bg-white/15 backdrop-blur" />
-              <div className="h-2 w-20 rounded-full bg-white/30" />
-              <div className="mt-2 h-2 w-14 rounded-full bg-white/20" />
-            </div>
-          </div>
-        </div>
+      {/* Slideshow frame. Shots are contained rather than cropped, because a
+          good few of them carry their own printed specs near the edges. */}
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] border border-white/15 bg-white shadow-2xl dark:border-white/10 dark:bg-jt-ink-soft">
+        {frame.outgoing && (
+          <motion.img
+            key={`out-${frame.lap}`}
+            src={frame.outgoing.src}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            initial={{ opacity: 1, x: '0%' }}
+            animate={reduceMotion ? { opacity: 0 } : { opacity: 0, x: '-32%' }}
+            transition={{ duration: SLIDE_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 h-full w-full object-contain p-6"
+          />
+        )}
+        <motion.img
+          key={`in-${frame.lap}`}
+          src={frame.current.src}
+          alt={frame.current.alt}
+          decoding="async"
+          initial={frame.lap === 0 ? false : reduceMotion ? { opacity: 0 } : { opacity: 0, x: '32%' }}
+          animate={{ opacity: 1, x: '0%' }}
+          transition={{ duration: SLIDE_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-0 h-full w-full object-contain p-6"
+        />
       </div>
 
       {/* Floating trust badges */}
