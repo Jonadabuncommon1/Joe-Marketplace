@@ -126,10 +126,13 @@ export const HeroVisual: React.FC<{ className?: string }> = ({ className = '' })
     return () => window.clearTimeout(id);
   }, [frame.lap, frame.outgoing]);
 
-  // Warm the next few shots so a slide never lands on a blank frame.
+  // Warm exactly the next pair so a slide never lands on a blank frame. This
+  // peeks with the same picker rather than taking the queue's first two, since
+  // the category rule can pull the partner from further down; guessing meant
+  // warming a third image that was usually never shown.
   useEffect(() => {
     if (!isWide) return;
-    queueRef.current.slice(0, 3).forEach((shot) => {
+    takePair(queueRef.current).pair.forEach((shot) => {
       const img = new Image();
       img.src = shot.src;
     });
