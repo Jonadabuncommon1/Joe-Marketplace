@@ -194,7 +194,110 @@ export const ProductsManager = () => {
           />
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Phone layout: the seven-column table below needs ~900px, so on a
+            phone it was a sideways scroll with most columns off screen. Same
+            data, stacked into a card per product. */}
+        <div className="space-y-3 md:hidden">
+          {filtered.length === 0 ? (
+            <p className="py-10 text-center text-sm text-gray-600 dark:text-gray-300">
+              No products match your search.
+            </p>
+          ) : (
+            filtered.map((product) => (
+              <div
+                key={product.id}
+                className="rounded-xl border border-gray-200 dark:border-white/10 p-3"
+              >
+                <div className="flex gap-3">
+                  {product.images && product.images.length > 0 ? (
+                    <img
+                      src={product.images[0]}
+                      alt=""
+                      className="h-14 w-14 shrink-0 rounded-lg object-cover shadow-sm"
+                    />
+                  ) : (
+                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-gray-200 text-xs text-gray-500 dark:bg-gray-800">
+                      N/A
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-bold text-[#3626a7] dark:text-[#6b58ea]">
+                      {product.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      {product.category}
+                      {product.condition ? ` · ${product.condition}` : ''}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                      {formatPrice(product.price)}
+                    </p>
+                  </div>
+                </div>
+
+                {(product.isHot || product.isTrending || product.isFeatured || product.badge) && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {product.isHot && (
+                      <span className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                        <Flame size={10} /> HOT
+                      </span>
+                    )}
+                    {product.isTrending && (
+                      <span className="inline-flex items-center gap-1 rounded border border-purple-300 bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-900 dark:border-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                        <Zap size={10} /> TRENDING
+                      </span>
+                    )}
+                    {product.isFeatured && (
+                      <span className="inline-flex items-center gap-1 rounded border border-blue-300 bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-900 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        <Star size={10} /> FEATURED
+                      </span>
+                    )}
+                    {product.badge && (
+                      <span className="rounded border bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        {product.badge}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-2.5 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => toggleStock(product)}
+                    className={`inline-flex items-center gap-1 rounded border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      product.inStock === false
+                        ? 'border-red-200 bg-red-100 text-red-800 dark:border-red-800/30 dark:bg-red-900/30 dark:text-red-400'
+                        : 'border-green-200 bg-green-100 text-green-800 dark:border-green-800/30 dark:bg-green-900/30 dark:text-green-400'
+                    }`}
+                  >
+                    {product.inStock === false ? <Ban size={11} /> : <CheckCircle2 size={11} />}
+                    {product.inStock === false ? 'Out of Stock' : 'In Stock'}
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(product)}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                    >
+                      <Edit size={15} /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(product.id, product.name)}
+                      className="inline-flex items-center rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 dark:hover:bg-red-500/10"
+                      aria-label={`Delete ${product.name}`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
             <thead className="text-xs text-gray-900 dark:text-gray-100 uppercase bg-gray-50 dark:bg-white/5 border-b dark:border-white/10">
               <tr>

@@ -205,7 +205,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
         className="relative w-full md:w-[640px] h-full bg-white dark:bg-[#0a0a0a] shadow-2xl flex flex-col transform transition-transform duration-300"
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-white/10 shrink-0">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 dark:border-white/10 shrink-0">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               {editingId ? 'Edit Product Listing' : 'Add New Product'}
@@ -224,7 +224,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
         </div>
 
         {/* Scrollable Form Content */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+        <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
           {formError && (
             <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-lg px-4 py-3 flex items-center">
               <span className="mr-2">⚠️</span> {formError}
@@ -248,7 +248,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
             </div>
 
             {/* Category & Condition */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
                   Category
@@ -323,7 +323,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
             </div>
 
             {/* Pricing */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
                   Selling Price (₦)
@@ -526,7 +526,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
                   </button>
                 </div>
 
-                <div className="mt-4 grid grid-cols-5 gap-2">
+                <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
                   {form.images.map((url, idx) => (
                     <div
                       key={`existing-${idx}`}
@@ -572,18 +572,18 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-gray-200 dark:border-white/10 flex justify-end space-x-3 bg-gray-50 dark:bg-[#0f0f0f] shrink-0">
+        <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-white/10 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 sm:space-x-0 bg-gray-50 dark:bg-[#0f0f0f] shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#222]"
+            className="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#222]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isUploading}
-            className="px-6 py-2.5 bg-[#3626a7] hover:bg-[#281c7d] text-white rounded-xl text-xs font-bold flex items-center space-x-2 disabled:opacity-50 shadow-md shadow-[#3626a7]/20 transition-all"
+            className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-[#3626a7] hover:bg-[#281c7d] text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 disabled:opacity-50 shadow-md shadow-[#3626a7]/20 transition-all"
           >
             {isUploading ? (
               <>

@@ -95,7 +95,7 @@ export const DashboardHome = ({ onChangeView }: { onChangeView: (view: AdminView
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl border dark:border-white/10 shadow-sm transition-colors duration-500">
+          <div key={i} className="bg-white dark:bg-[#0a0a0a] p-4 sm:p-6 rounded-2xl border dark:border-white/10 shadow-sm transition-colors duration-500">
             <div className="flex justify-between items-start mb-4">
               <div className="p-3 bg-[#ece9fa] dark:bg-[#3626a7]/20 rounded-xl">
                 <stat.icon size={20} className="brand-text" />
@@ -143,8 +143,8 @@ export const DashboardHome = ({ onChangeView }: { onChangeView: (view: AdminView
                   <th className="py-3 pr-4">Visitor</th>
                   <th className="py-3 pr-4">Email</th>
                   <th className="py-3 pr-4">Signed In</th>
-                  <th className="py-3 pr-4">Device</th>
-                  <th className="py-3">Browser</th>
+                  <th className="hidden py-3 pr-4 sm:table-cell">Device</th>
+                  <th className="hidden py-3 lg:table-cell">Browser</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,8 +169,8 @@ export const DashboardHome = ({ onChangeView }: { onChangeView: (view: AdminView
                         ? new Date((v.signedInAt as any).toDate()).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
                         : 'Just now'}
                     </td>
-                    <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{v.device}</td>
-                    <td className="py-3 text-gray-600 dark:text-gray-400">{v.browser}</td>
+                    <td className="hidden py-3 pr-4 text-gray-600 dark:text-gray-400 sm:table-cell">{v.device}</td>
+                    <td className="hidden py-3 text-gray-600 dark:text-gray-400 lg:table-cell">{v.browser}</td>
                   </tr>
                 ))}
               </tbody>
@@ -180,7 +180,7 @@ export const DashboardHome = ({ onChangeView }: { onChangeView: (view: AdminView
       </div>
 
       {/* ── UPLOAD HISTORY ── */}
-      <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl border dark:border-white/10 shadow-sm transition-colors duration-500">
+      <div className="bg-white dark:bg-[#0a0a0a] p-4 sm:p-6 rounded-2xl border dark:border-white/10 shadow-sm transition-colors duration-500">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold">Upload History</h2>
           <button
@@ -199,8 +199,8 @@ export const DashboardHome = ({ onChangeView }: { onChangeView: (view: AdminView
               <thead className="text-xs uppercase text-gray-700 dark:text-gray-200 border-b dark:border-white/10">
                 <tr>
                   <th className="py-3 pr-4">Product</th>
-                  <th className="py-3 pr-4">Category</th>
-                  <th className="py-3 pr-4">Upload Date &amp; Time</th>
+                  <th className="hidden py-3 pr-4 sm:table-cell">Category</th>
+                  <th className="hidden py-3 pr-4 lg:table-cell">Upload Date &amp; Time</th>
                   <th className="py-3 pr-4">Price</th>
                   <th className="py-3">Status</th>
                 </tr>
@@ -209,8 +209,8 @@ export const DashboardHome = ({ onChangeView }: { onChangeView: (view: AdminView
                 {recent.map((p) => (
                   <tr key={p.id} className="border-b dark:border-white/10 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                     <td className="py-3 pr-4 font-bold text-[#281c7d]">{p.name}</td>
-                    <td className="py-3 pr-4 text-gray-800 dark:text-gray-200">{p.category}</td>
-                    <td className="py-3 pr-4 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    <td className="hidden py-3 pr-4 text-gray-800 dark:text-gray-200 sm:table-cell">{p.category}</td>
+                    <td className="hidden py-3 pr-4 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap lg:table-cell">
                       {p.created_at ? new Date(p.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'Legacy Upload'}
                     </td>
                     <td className="py-3 pr-4 font-bold text-[#000000] dark:text-gray-800 dark:text-white">{formatPrice(p.price)}</td>

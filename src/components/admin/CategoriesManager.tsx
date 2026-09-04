@@ -24,15 +24,15 @@ export const CategoriesManager = () => {
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
             <thead className="text-xs text-gray-900 dark:text-gray-100 uppercase bg-gray-50 dark:bg-white/5 border-b dark:border-white/10">
               <tr>
-                <th className="px-6 py-4">Category Name</th>
-                <th className="px-6 py-4">In-Stock Items</th>
-                <th className="px-6 py-4">Type</th>
+                <th className="px-3 py-3 md:px-6 md:py-4">Category Name</th>
+                <th className="px-3 py-3 md:px-6 md:py-4">In-Stock Items</th>
+                <th className="px-3 py-3 md:px-6 md:py-4">Type</th>
               </tr>
             </thead>
             <tbody>
               {categories.map((cat) => (
                 <tr key={cat.id} className="border-b dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 flex items-center space-x-3">
+                  <td className="px-3 py-3 md:px-6 md:py-4 flex items-center space-x-3">
                     <span
                       className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${cat.gradient} text-white shadow-sm`}
                     >
@@ -40,13 +40,13 @@ export const CategoriesManager = () => {
                     </span>
                     <div>
                       <div className="font-medium text-gray-900 dark:text-gray-800 dark:text-white">{cat.name}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 dark:text-gray-800 dark:text-white max-w-xs truncate">{cat.description}</div>
+                      <div className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 max-w-xs truncate">{cat.description}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-bold text-[#000000] dark:text-gray-800 dark:text-white">
+                  <td className="px-3 py-3 md:px-6 md:py-4 font-bold text-[#000000] dark:text-gray-800 dark:text-white">
                     {cat.isService ? '—' : products.filter((p) => p.category === cat.name && p.inStock !== false).length}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-3 md:px-6 md:py-4">
                     {cat.isService ? (
                       <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium px-2.5 py-0.5 rounded border border-blue-200 dark:border-blue-800/30">
                         Service
