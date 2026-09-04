@@ -122,4 +122,31 @@ export const heroShots: HeroShot[] = [
 
   // ── itel power stations ──
   { src: '/hero/itel-power-go-display.jpg', alt: 'itel Energy Power Go and Power Go Pro power stations on display' },
+
+  // ── Infinix ──
+  { src: '/hero/infinix-smart-10.jpg', alt: 'Infinix Smart 10 in silver and black' },
+  { src: '/hero/infinix-note-50-pro.jpg', alt: 'Infinix Note 50 Pro in purple' },
+  { src: '/hero/infinix-note-60-pro.jpg', alt: 'Infinix Note 60 Pro in orange' },
+  { src: '/hero/infinix-note-edge.jpg', alt: 'Infinix Note Edge 5G' },
+
+  // ── JBL and oraimo audio ──
+  { src: '/hero/jbl-partybox.jpg', alt: 'A JBL PartyBox speaker with its ring lights lit' },
+  { src: '/hero/jbl-charge-5-boxes.jpg', alt: 'JBL Charge 5 speakers boxed in red, blue and camo' },
+  { src: '/hero/jbl-go-3.jpg', alt: 'JBL Go 3, a pocket-sized waterproof Bluetooth speaker' },
+  { src: '/hero/oraimo-spacebuds.jpg', alt: 'oraimo SpaceBuds with hybrid noise cancelling' },
+  { src: '/hero/oraimo-earbuds-black.jpg', alt: 'oraimo wireless earbuds in their charging case' },
+  { src: '/hero/oraimo-necklace-2.jpg', alt: 'oraimo Necklace 2 neckband earphones with their box' },
+
+  // ── Inverters and solar ──
+  { src: '/hero/itel-inverter-installed.jpg', alt: 'An itel inverter and ESS battery installed on a wall' },
+  { src: '/hero/itel-4kw-inverter.jpg', alt: 'An itel 4kW Pro hybrid inverter' },
+  { src: '/hero/itel-solar-kit.jpg', alt: 'An itel Energy solar panel beside its battery unit' },
+  { src: '/hero/solar-panels-stacked.jpg', alt: 'Solar panels lined up ready for installation' },
+  { src: '/hero/colasolar-generator.jpg', alt: 'A ColaSolar portable solar generator' },
+
+  // ── itel power banks and chargers ──
+  { src: '/hero/itel-power-go-100000mah.jpg', alt: 'The itel Power Go, a 100,000mAh portable power station' },
+  { src: '/hero/itel-power-go-130w.jpg', alt: 'The itel Power Go delivering 130W of portable power' },
+  { src: '/hero/itel-power-supply-family.jpg', alt: 'The itel power bank and wall charger range' },
+  { src: '/hero/apple-charger-cable.jpg', alt: 'A 20W USB-C charger with a Lightning cable' },
 ];
