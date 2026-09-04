@@ -128,29 +128,38 @@ export const HeroVisual: React.FC<{ className?: string }> = ({ className = '' })
       {/* Slideshow frame. Shots are contained rather than cropped, because a
           good few of them carry their own printed specs near the edges. */}
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] border border-white/15 bg-white shadow-2xl dark:border-white/10 dark:bg-jt-ink-soft">
-        {frame.outgoing && (
-          <motion.img
-            key={`out-${frame.lap}`}
-            src={frame.outgoing.src}
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            initial={{ opacity: 1, x: '0%' }}
-            animate={reduceMotion ? { opacity: 0 } : { opacity: 0, x: '-32%' }}
-            transition={{ duration: SLIDE_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 h-full w-full object-contain p-6"
-          />
+        {/* Held back below `lg` on purpose: a plain <img src> is fetched even
+            inside a display:none parent, so rendering these would cost phones a
+            download for art they never get to see. */}
+        {isWide && (
+          <>
+            {frame.outgoing && (
+              <motion.img
+                key={`out-${frame.lap}`}
+                src={frame.outgoing.src}
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+                initial={{ opacity: 1, x: '0%' }}
+                animate={reduceMotion ? { opacity: 0 } : { opacity: 0, x: '-32%' }}
+                transition={{ duration: SLIDE_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 h-full w-full object-contain p-6"
+              />
+            )}
+            <motion.img
+              key={`in-${frame.lap}`}
+              src={frame.current.src}
+              alt={frame.current.alt}
+              decoding="async"
+              initial={
+                frame.lap === 0 ? false : reduceMotion ? { opacity: 0 } : { opacity: 0, x: '32%' }
+              }
+              animate={{ opacity: 1, x: '0%' }}
+              transition={{ duration: SLIDE_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 h-full w-full object-contain p-6"
+            />
+          </>
         )}
-        <motion.img
-          key={`in-${frame.lap}`}
-          src={frame.current.src}
-          alt={frame.current.alt}
-          decoding="async"
-          initial={frame.lap === 0 ? false : reduceMotion ? { opacity: 0 } : { opacity: 0, x: '32%' }}
-          animate={{ opacity: 1, x: '0%' }}
-          transition={{ duration: SLIDE_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-0 h-full w-full object-contain p-6"
-        />
       </div>
 
       {/* Floating trust badges */}
