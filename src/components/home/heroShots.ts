@@ -12,7 +12,6 @@ export interface HeroShot {
 
 export const heroShots: HeroShot[] = [
   // Phones
-  { src: '/hero/gadget-lineup.jpg', alt: 'Phones, tablets, consoles, speakers and headphones lined up together' },
   { src: '/hero/iphone-16-series.jpg', alt: 'The iPhone 16 series' },
   { src: '/hero/samsung-galaxy-s24-ultra.jpg', alt: 'Samsung Galaxy S24 Ultra in titanium black' },
   { src: '/hero/samsung-galaxy-s26-ultra.jpg', alt: 'Samsung Galaxy S26 Ultra' },
@@ -36,7 +35,6 @@ export const heroShots: HeroShot[] = [
   // Gaming
   { src: '/hero/gaming-laptop-4k.jpg', alt: 'A gaming laptop running 4K graphics' },
   { src: '/hero/asus-rog-gaming-laptop.jpg', alt: 'An ASUS ROG gaming laptop lit in neon' },
-  { src: '/hero/gaming-pc-setup.jpg', alt: 'A full gaming PC setup' },
   { src: '/hero/xbox-controller-shock-blue.jpg', alt: 'Xbox wireless controller in shock blue' },
   { src: '/hero/xbox-controller-carbon-black.jpg', alt: 'Xbox wireless controller in carbon black' },
 
@@ -73,14 +71,10 @@ export const heroShots: HeroShot[] = [
   { src: '/hero/galaxy-ultra-vs-iphone-pro.jpg', alt: 'A Samsung Galaxy Ultra standing next to an iPhone Pro' },
 
   // ── Newest Apple lineup ──
-  { src: '/hero/iphone-18-pro.jpg', alt: 'iPhone 18 Pro in deep red' },
-  { src: '/hero/iphone-18-lineup.jpg', alt: 'The iPhone 18 lineup: 18e, 18, Air 2, Pro and Pro Max' },
-  { src: '/hero/iphone-air-2.jpg', alt: 'iPhone Air 2 in lavender' },
 
   // ── Laptops, screens and parts ──
   { src: '/hero/surface-laptop-studio.jpg', alt: 'A Surface Laptop Studio open on a desk' },
   { src: '/hero/curved-monitor.jpg', alt: 'A curved widescreen monitor being set up' },
-  { src: '/hero/laptop-ssds.jpg', alt: 'A pile of laptop SSDs ready for storage upgrades' },
 
   // ── Gaming ──
   { src: '/hero/ps5-console-boxed.jpg', alt: 'A PlayStation 5 unboxed with its controller and cables' },
@@ -95,7 +89,6 @@ export const heroShots: HeroShot[] = [
   { src: '/hero/newage-connect-prime-11-duo-silver.jpg', alt: 'New Age Connect Prime 11 Duo 65W braided cable' },
   { src: '/hero/newage-connect-prime-11-duo-black.jpg', alt: 'New Age Connect Prime 11 Duo with Type C and Lightning ends' },
   { src: '/hero/newage-connect-prime-11-27w.jpg', alt: 'New Age Connect Prime 11 27W Type C to Lightning cable with its box' },
-  { src: '/hero/itel-power-go-pro.jpg', alt: 'An itel Energy Power Go Pro portable power station' },
 
   // ── Feature phones ──
   { src: '/hero/itel-it2160-phones.jpg', alt: 'Boxes of itel it2160 feature phones with wireless FM' },
@@ -124,7 +117,6 @@ export const heroShots: HeroShot[] = [
   { src: '/hero/itel-power-go-display.jpg', alt: 'itel Energy Power Go and Power Go Pro power stations on display' },
 
   // ── Infinix ──
-  { src: '/hero/infinix-smart-10.jpg', alt: 'Infinix Smart 10 in silver and black' },
   { src: '/hero/infinix-note-50-pro.jpg', alt: 'Infinix Note 50 Pro in purple' },
   { src: '/hero/infinix-note-60-pro.jpg', alt: 'Infinix Note 60 Pro in orange' },
   { src: '/hero/infinix-note-edge.jpg', alt: 'Infinix Note Edge 5G' },
@@ -133,7 +125,6 @@ export const heroShots: HeroShot[] = [
   { src: '/hero/jbl-partybox.jpg', alt: 'A JBL PartyBox speaker with its ring lights lit' },
   { src: '/hero/jbl-charge-5-boxes.jpg', alt: 'JBL Charge 5 speakers boxed in red, blue and camo' },
   { src: '/hero/jbl-go-3.jpg', alt: 'JBL Go 3, a pocket-sized waterproof Bluetooth speaker' },
-  { src: '/hero/oraimo-spacebuds.jpg', alt: 'oraimo SpaceBuds with hybrid noise cancelling' },
   { src: '/hero/oraimo-earbuds-black.jpg', alt: 'oraimo wireless earbuds in their charging case' },
   { src: '/hero/oraimo-necklace-2.jpg', alt: 'oraimo Necklace 2 neckband earphones with their box' },
 
@@ -149,4 +140,21 @@ export const heroShots: HeroShot[] = [
   { src: '/hero/itel-power-go-130w.jpg', alt: 'The itel Power Go delivering 130W of portable power' },
   { src: '/hero/itel-power-supply-family.jpg', alt: 'The itel power bank and wall charger range' },
   { src: '/hero/apple-charger-cable.jpg', alt: 'A 20W USB-C charger with a Lightning cable' },
+
+  // ── Memory and storage ──
+  { src: '/hero/ram-ddr2-ddr3-ddr4.jpg', alt: 'Laptop memory modules: DDR2, DDR3 and DDR4 side by side' },
+  { src: '/hero/ram-ddr4-desktop.jpg', alt: 'DDR4 desktop memory in 4GB, 8GB and 16GB sticks' },
+  { src: '/hero/m2-ssd.jpg', alt: 'A 1TB M.2 solid state drive on a motherboard' },
+
+  // ── Gaming rigs and peripherals ──
+  { src: '/hero/gaming-pc-rgb.jpg', alt: 'A gaming PC with liquid cooling and blue lit fans' },
+  { src: '/hero/gaming-keyboard-rgb.jpg', alt: 'A mechanical gaming keyboard lit in rainbow colours' },
+  { src: '/hero/gaming-keyboard-neon.jpg', alt: 'A backlit mechanical keyboard glowing in neon' },
+  { src: '/hero/keyboard-and-mouse.jpg', alt: 'A mechanical keyboard and gaming mouse on a desk' },
+  { src: '/hero/gaming-desk-led.jpg', alt: 'An LED gaming desk with a racing-style chair' },
+
+  // ── Monitors and laptops ──
+  { src: '/hero/koorui-34-monitor.jpg', alt: 'A KOORUI 34 inch ultrawide curved gaming monitor' },
+  { src: '/hero/msi-27-monitor.jpg', alt: 'An MSI 27 inch 2K gaming monitor on its box' },
+  { src: '/hero/hp-envy-boxes.jpg', alt: 'Boxed HP Envy and HP gaming laptops on the shelf' },
 ];
