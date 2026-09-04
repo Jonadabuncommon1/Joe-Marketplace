@@ -82,6 +82,9 @@ export async function updateProductInDB(id: string, updates: Partial<Product>): 
     if (error) throw error;
   } catch (error) {
     console.error('Error updating product:', error);
+    // Re-throw so the caller knows the save didn't really happen, instead of
+    // quietly keeping an optimistic UI change that the next refresh erases.
+    throw error;
   }
 
   const cached = readCache();
@@ -96,6 +99,7 @@ export async function deleteProductFromDB(id: string): Promise<void> {
     if (error) throw error;
   } catch (error) {
     console.error('Error deleting product:', error);
+    throw error;
   }
 
   const cached = readCache();

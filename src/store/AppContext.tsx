@@ -25,8 +25,8 @@ interface AppContextProps {
   setCartOpen: (open: boolean) => void;
   products: Product[];
   addProduct: (product: Omit<Product, 'id'>) => Promise<Product>;
-  updateProduct: (id: string, updates: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
+  updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
   getProductById: (id: string) => Product | undefined;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
@@ -239,16 +239,49 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return created;
   }, []);
 
-  const updateProduct = useCallback((id: string, updates: Partial<Product>) => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
-    updateProductInDB(id, updates);
+  const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
+    let previous: Product | undefined;
+    setProducts((prev) => {
+      previous = prev.find((p) => p.id === id);
+      return prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
+    });
+    try {
+      await updateProductInDB(id, updates);
+    } catch (error) {
+      // The save didn't actually happen, undo the optimistic change so the
+      // screen doesn't show something a refresh would immediately erase.
+      if (previous) {
+        const restored = previous;
+        setProducts((prev) => prev.map((p) => (p.id === id ? restored : p)));
+      }
+      throw error;
+    }
   }, []);
 
-  const deleteProduct = useCallback((id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    deleteProductFromDB(id);
+  const deleteProduct = useCallback(async (id: string) => {
+    let removed: Product | undefined;
+    let removedIndex = -1;
+    setProducts((prev) => {
+      removedIndex = prev.findIndex((p) => p.id === id);
+      removed = prev[removedIndex];
+      return prev.filter((p) => p.id !== id);
+    });
     setCart((prev) => prev.filter((i) => i.product.id !== id));
     setWishlist((prev) => prev.filter((pid) => pid !== id));
+    try {
+      await deleteProductFromDB(id);
+    } catch (error) {
+      if (removed) {
+        const restored = removed;
+        const insertAt = removedIndex;
+        setProducts((prev) => {
+          const next = [...prev];
+          next.splice(Math.min(insertAt, next.length), 0, restored);
+          return next;
+        });
+      }
+      throw error;
+    }
   }, []);
 
   const getProductById = useCallback(

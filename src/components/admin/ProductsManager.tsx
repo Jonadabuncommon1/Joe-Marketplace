@@ -76,12 +76,16 @@ export const ProductsManager = () => {
     [productList],
   );
 
-  const toggleStock = (product: AdminProduct) => {
+  const toggleStock = async (product: AdminProduct) => {
     const nextInStock = product.inStock === false;
-    updateProduct(product.id, { inStock: nextInStock });
-    toast.success(
-      nextInStock ? `${product.name} marked back in stock` : `${product.name} marked out of stock`,
-    );
+    try {
+      await updateProduct(product.id, { inStock: nextInStock });
+      toast.success(
+        nextInStock ? `${product.name} marked back in stock` : `${product.name} marked out of stock`,
+      );
+    } catch {
+      toast.error(`Could not save that change for ${product.name}. Check your connection and try again.`);
+    }
   };
 
   const openAdd = () => {
@@ -122,9 +126,14 @@ export const ProductsManager = () => {
     closeModal();
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Remove "${name}" from the marketplace?`)) {
-      deleteProduct(id);
+      try {
+        await deleteProduct(id);
+        toast.success(`${name} removed.`);
+      } catch {
+        toast.error(`Could not remove ${name}. Check your connection and try again.`);
+      }
     }
   };
 
