@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag, Ban, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag, Ban, CheckCircle2, Link2, Clipboard } from 'lucide-react';
 import { marketplaceCategories } from '../../data';
 import { uploadImage } from '../../lib/supabase';
 import { useAppContext } from '../../store/AppContext';
@@ -73,6 +73,57 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+
+  const totalImageCount = form.images.length + selectedFiles.length;
+
+  const addFiles = (files: File[]) => {
+    if (files.length === 0) return;
+    if (totalImageCount + files.length > 5) {
+      setFormError('Maximum 5 images allowed per product.');
+      return;
+    }
+    setFormError('');
+    setSelectedFiles((prev) => [...prev, ...files]);
+  };
+
+  const addImageUrl = () => {
+    const url = imageUrlInput.trim();
+    if (!url) return;
+    if (!/^https?:\/\/\S+\.\S+/i.test(url)) {
+      setFormError('Enter a full image link starting with http:// or https://');
+      return;
+    }
+    if (totalImageCount + 1 > 5) {
+      setFormError('Maximum 5 images allowed per product.');
+      return;
+    }
+    setFormError('');
+    setForm((f) => ({ ...f, images: [...f.images, url] }));
+    setImageUrlInput('');
+  };
+
+  // Paste an image (Ctrl+V) anywhere in the form, e.g. copied from a web page
+  // or a screenshot, straight into the picker, no need to save it to disk first.
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const pastedFiles: File[] = [];
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) pastedFiles.push(file);
+        }
+      }
+      if (pastedFiles.length === 0) return; // no image on the clipboard, leave normal text paste alone
+      e.preventDefault();
+      addFiles(pastedFiles);
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalImageCount]);
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -432,25 +483,48 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
               </label>
               <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-6 bg-gray-50 dark:bg-[#1a1a1a] text-center transition-colors hover:bg-gray-100 dark:hover:bg-[#222]">
                 <UploadCloud size={32} className="text-[#3626a7] mx-auto mb-2" />
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 font-medium">
-                  Select device images
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
+                  Select device images, paste one (Ctrl+V), or add a web link below
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-3 flex items-center justify-center gap-1">
+                  <Clipboard size={11} /> Copy an image anywhere and press Ctrl+V (or Cmd+V) on this page to add it
                 </p>
                 <input
                   type="file"
                   multiple
                   accept="image/*"
                   onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    const totalImages = form.images.length + selectedFiles.length + files.length;
-                    if (totalImages > 5) {
-                      setFormError('Maximum 5 images allowed per product.');
-                      return;
-                    }
-                    setFormError('');
-                    setSelectedFiles((prev) => [...prev, ...files]);
+                    addFiles(Array.from(e.target.files || []));
+                    e.target.value = '';
                   }}
                   className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#3626a7] file:text-white hover:file:bg-[#281c7d] cursor-pointer"
                 />
+
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Link2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="url"
+                      placeholder="Or paste an image link (https://...)"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addImageUrl();
+                        }
+                      }}
+                      className="w-full pl-8 pr-3 py-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-lg text-xs focus:outline-none focus:border-[#3626a7]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addImageUrl}
+                    className="shrink-0 px-3.5 py-2 bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-bold hover:bg-gray-300 dark:hover:bg-white/20 transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
 
                 <div className="mt-4 grid grid-cols-5 gap-2">
                   {form.images.map((url, idx) => (
