@@ -142,12 +142,20 @@ export const ProductDetailView = () => {
             <div className="mb-2 flex items-center space-x-3">
                <span className="text-xs tracking-widest uppercase font-bold brand-text">{product.category}</span>
                {product.isNew && <span className="text-[10px] uppercase font-bold bg-[#3626a7]/20 brand-text px-2 py-1 rounded border brand-border shadow-[0_0_10px_rgba(168,85,247,0.2)]">New Arrival</span>}
+               {product.badge && <span className="text-[10px] uppercase font-bold bg-jt-lime text-white px-2 py-1 rounded shadow-sm">{product.badge}</span>}
             </div>
             
             <h1 className="text-3xl lg:text-5xl font-serif text-[#281c7d] mb-4 font-bold tracking-tight">{product.name}</h1>
             
             <div className="flex items-center space-x-4 mb-8">
-              <p className="text-3xl font-bold text-[#000000]">{formatPrice(product.price)}</p>
+              <div className="flex items-baseline gap-2.5">
+                <p className="text-3xl font-bold text-[#000000]">{formatPrice(product.price)}</p>
+                {!!product.originalPrice && product.originalPrice > product.price && (
+                  <p className="text-lg font-medium text-gray-400 line-through dark:text-gray-600">
+                    {formatPrice(product.originalPrice)}
+                  </p>
+                )}
+              </div>
               <div className="flex items-center space-x-1 border-l border-white/20 pl-4">
                  <Star size={14} className="text-yellow-500 fill-current" />
                  <Star size={14} className="text-yellow-500 fill-current" />

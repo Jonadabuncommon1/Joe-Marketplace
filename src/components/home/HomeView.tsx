@@ -614,7 +614,7 @@ export const HomeView: React.FC = () => {
     [setActiveCategory, setCurrentView],
   );
 
-  const { available, featured, hiddenTrendingCount, categoryCounts, hotDeals } = useMemo(() => {
+  const { available, featured, hiddenTrendingCount, categoryCounts, hotDeals, featuredPicks } = useMemo(() => {
     // The homepage's auto-rotating promo rails (Hot Deals, Trending, the
     // category "N in stock" counts) all draw from what a shopper can
     // actually buy right now, an item marked out of stock is left out
@@ -640,6 +640,9 @@ export const HomeView: React.FC = () => {
       categoryCounts: counts,
       // Capped at 8, two dot-pages of four, rather than the whole catalog.
       hotDeals: dealsPool.slice(0, 8),
+      // Admin's "Featured" checkbox on a product, a hand-picked spotlight
+      // distinct from the algorithmic Trending/Hot rails above.
+      featuredPicks: available.filter((p) => p.isFeatured).slice(0, 4),
     };
   }, [products]);
 
@@ -790,6 +793,28 @@ export const HomeView: React.FC = () => {
                   </span>
                 </motion.button>
               )}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* ── Featured Picks (admin's "Featured" checkbox) ── */}
+      {featuredPicks.length > 0 && (
+        <Section className="bg-white py-8 dark:bg-jt-ink-soft/30 sm:py-14">
+          <div className="mx-auto w-full max-w-7xl px-3.5 sm:px-6">
+            <SectionHeading
+              eyebrow="Handpicked"
+              title={
+                <>
+                  Staff <span className="text-shine">favorites</span>
+                </>
+              }
+              subtitle="A few we're personally vouching for this week."
+            />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredPicks.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
           </div>
         </Section>

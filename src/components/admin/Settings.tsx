@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Lock, Mail } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -49,24 +49,16 @@ export const Settings = () => {
       </div>
 
       <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl border dark:border-white/10 shadow-sm space-y-8 transition-colors duration-500">
-        
+
         {/* Info Setup */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <h2 className="text-lg font-bold border-b dark:border-white/10 pb-2">Business Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
-              <input type="text" defaultValue="Joe Tech" className="w-full px-4 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-800 dark:text-white rounded-lg focus:outline-none focus:border-[#3626a7] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">WhatsApp Number</label>
-              <input type="text" defaultValue="08133727813" className="w-full px-4 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-800 dark:text-white rounded-lg focus:outline-none focus:border-[#3626a7] transition-colors" />
-            </div>
-          </div>
-          <button className="flex items-center space-x-2 bg-[#3626a7] hover:bg-[#281c7d] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-            <Save size={16} />
-            <span>Save Details</span>
-          </button>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Company name, WhatsApp numbers, branch addresses and bank details are set in one place in
+            the code (<code className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-xs">src/config/site.ts</code>),
+            not here, so every part of the site (checkout, footer, contact page, AI assistant) always
+            shows the same values. Tell your developer what to change and it updates everywhere at once.
+          </p>
         </div>
 
         {/* Security / Admin Credentials */}

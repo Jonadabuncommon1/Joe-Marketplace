@@ -61,6 +61,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             )}
           </div>
 
+          {product.badge && (
+            <span className="absolute right-2.5 top-2.5 z-10 rounded-full bg-jt-lime px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+              {product.badge}
+            </span>
+          )}
+
           {/* Product Image */}
           <div className="h-full w-full transform transition-transform duration-500 group-hover:scale-105">
             <ProductImage
@@ -134,8 +140,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
       {/* Pricing & Stock Footer */}
       <div className="mt-3 flex items-center justify-between border-t border-jt-ink/5 px-1 pt-2.5 dark:border-white/5">
-        <p className="font-tech text-base font-bold text-jt-blue dark:text-jt-mint">
-          {formatPrice(product.price)}
+        <p className="flex items-baseline gap-1.5">
+          <span className="font-tech text-base font-bold text-jt-blue dark:text-jt-mint">
+            {formatPrice(product.price)}
+          </span>
+          {!!product.originalPrice && product.originalPrice > product.price && (
+            <span className="font-tech text-[11px] text-jt-ink/40 line-through dark:text-jt-steel/70">
+              {formatPrice(product.originalPrice)}
+            </span>
+          )}
         </p>
 
         {outOfStock ? (

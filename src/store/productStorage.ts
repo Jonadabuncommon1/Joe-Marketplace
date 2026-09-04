@@ -1,24 +1,8 @@
 import { Product } from '../types';
 import { supabase } from '../lib/supabase';
-import { products as seedProducts, marketplaceCategories } from '../data';
+import { products as seedProducts } from '../data';
 
 const STORAGE_KEY = 'joetech_products';
-
-const KNOWN_CATEGORIES = new Set(marketplaceCategories.map((c) => c.id));
-
-/**
- * This Supabase project is currently shared with another live business, so its
- * `products` table holds rows that belong to that project, not Joe Tech
- * (clothing, cars, provisions). Do NOT delete them, they are someone else's
- * real inventory. This filter just keeps them off the Joe Tech storefront.
- *
- * The real fix is to move Joe Tech onto its own dedicated Supabase project,
- * see supabase-setup.sql at the repo root, which also protects the admin
- * dashboard from editing or deleting the other project's products by mistake.
- */
-function keepJoeTechProducts(rows: Product[]): Product[] {
-  return rows.filter((p) => p.category && KNOWN_CATEGORIES.has(p.category));
-}
 
 /** Legacy keys from earlier builds, read once so returning visitors keep their data. */
 const LEGACY_KEYS = ['Joe Tech_products', 'Joe Marketplace_products'];
@@ -51,9 +35,7 @@ function writeCache(products: Product[]): void {
  */
 export function getInitialProductsFromStorage(): Product[] {
   const cached = readCache();
-  if (!cached) return seedProducts;
-  const relevant = keepJoeTechProducts(cached);
-  return relevant.length > 0 ? relevant : seedProducts;
+  return cached && cached.length > 0 ? cached : seedProducts;
 }
 
 export async function fetchProductsFromDB(): Promise<Product[]> {
@@ -66,13 +48,12 @@ export async function fetchProductsFromDB(): Promise<Product[]> {
     if (error) {
       console.error('Supabase fetch error:', error.message);
     } else if (data) {
-      const relevant = keepJoeTechProducts(data as Product[]);
-      if (relevant.length > 0) {
-        writeCache(relevant);
-        return relevant;
+      if (data.length > 0) {
+        writeCache(data as Product[]);
+        return data as Product[];
       }
-      // Reachable, but nothing stocked under a Joe Tech category yet, show the
-      // starter catalog rather than an empty store.
+      // Reachable, but the table is genuinely empty, show the starter
+      // catalog rather than a blank store.
       return seedProducts;
     }
   } catch (err) {

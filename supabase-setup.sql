@@ -6,26 +6,42 @@
 -- .env / Vercel environment variables need to point here afterwards.
 
 create table if not exists public.products (
-  id           text primary key,
-  name         text not null,
-  price        numeric not null,
-  description  text,
-  category     text not null,
-  colors       text[],
-  sizes        text[],
-  images       text[] not null default '{}',
-  "isNew"      boolean default false,
-  "isTrending" boolean default false,
-  location     text,
-  year         text,
-  mileage      text,
-  icon         text,
-  specs        text[],
-  condition    text,
-  "isService"  boolean default false,
-  "inStock"    boolean default true,
-  created_at   timestamptz not null default now()
+  id             text primary key,
+  name           text not null,
+  price          numeric not null,
+  "originalPrice" numeric,
+  description    text,
+  category       text not null,
+  colors         text[],
+  sizes          text[],
+  images         text[] not null default '{}',
+  "isNew"        boolean default false,
+  "isTrending"   boolean default false,
+  "isHot"        boolean default false,
+  "isFeatured"   boolean default false,
+  badge          text,
+  location       text,
+  year           text,
+  mileage        text,
+  icon           text,
+  specs          text[],
+  condition      text,
+  "isService"    boolean default false,
+  "inStock"      boolean default true,
+  created_at     timestamptz not null default now()
 );
+
+-- Idempotent migration for a table that already exists (safe to run any
+-- number of times): adds the columns the admin upload form now sends
+-- (Original price / Hot Deals / Featured / Custom promo badge) that an
+-- older run of this file wouldn't have created yet. This is what fixes
+-- "Could not find the '<column>' column of 'products' in the schema
+-- cache" errors when publishing a product from the admin panel.
+alter table public.products
+  add column if not exists "originalPrice" numeric,
+  add column if not exists "isHot" boolean default false,
+  add column if not exists "isFeatured" boolean default false,
+  add column if not exists badge text;
 
 alter table public.products enable row level security;
 
