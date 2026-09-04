@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Star, Truck, Wrench } from 'lucide-react';
 import { heroShots, HeroShot } from './heroShots';
 
 /** How long each shot holds before the next one slides in. */
@@ -10,15 +9,14 @@ const HOLD_MS = 3800;
 const SLIDE_MS = 650;
 
 /**
- * Hero art: real product shots sliding through a single frame, with a few
- * floating trust badges over them. It replaced a static CSS phone/laptop
- * mockup, which in turn replaced an animated canvas scene that ran a
- * continuous requestAnimationFrame simulation on every visit and was the main
- * thing making the homepage feel heavy on slower devices.
+ * Hero art: real product shots sliding through a single frame. It replaced a
+ * static CSS phone/laptop mockup, which in turn replaced an animated canvas
+ * scene that ran a continuous requestAnimationFrame simulation on every visit
+ * and was the main thing making the homepage feel heavy on slower devices.
  *
  * So the slideshow is deliberately cheap: at most two shots are in the DOM at
- * once (never all 32), exactly one more is warmed ahead of them, nothing loads
- * or ticks below `lg` where the art is hidden anyway, a background tab doesn't
+ * once (never the whole set), exactly one more is warmed ahead of them, nothing
+ * loads or ticks below `lg` where the art is hidden, a background tab does not
  * advance, and the movement is transform/opacity only so it stays on the
  * compositor.
  *
@@ -160,31 +158,6 @@ export const HeroVisual: React.FC<{ className?: string }> = ({ className = '' })
             />
           </>
         )}
-      </div>
-
-      {/* Floating trust badges */}
-      <div className="animate-floating absolute -left-4 top-2 flex items-center gap-2 rounded-full border border-jt-ink/10 bg-white px-3.5 py-2 shadow-lg dark:border-white/10 dark:bg-jt-ink-soft sm:-left-8">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-jt-mint/15 text-jt-mint">
-          <Star className="h-3.5 w-3.5 fill-current" />
-        </span>
-        <div className="leading-none">
-          <p className="text-xs font-bold text-jt-ink dark:text-white">4.9 rated</p>
-          <p className="mt-0.5 text-[10px] text-jt-ink/50 dark:text-jt-steel">by real customers</p>
-        </div>
-      </div>
-
-      <div className="animate-floating-delayed absolute -bottom-4 -left-2 flex items-center gap-2 rounded-full border border-jt-ink/10 bg-white px-3.5 py-2 shadow-lg dark:border-white/10 dark:bg-jt-ink-soft sm:-left-6">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-jt-blue/15 text-jt-blue dark:text-jt-mint">
-          <Wrench className="h-3.5 w-3.5" />
-        </span>
-        <p className="text-xs font-bold text-jt-ink dark:text-white">Free diagnosis</p>
-      </div>
-
-      <div className="animate-floating absolute -right-3 bottom-8 flex items-center gap-2 rounded-full border border-jt-ink/10 bg-white px-3.5 py-2 shadow-lg dark:border-white/10 dark:bg-jt-ink-soft sm:-right-6">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-jt-blue/15 text-jt-blue dark:text-jt-mint">
-          <Truck className="h-3.5 w-3.5" />
-        </span>
-        <p className="text-xs font-bold text-jt-ink dark:text-white">Nationwide delivery</p>
       </div>
     </div>
   );
