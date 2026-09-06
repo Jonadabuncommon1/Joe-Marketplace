@@ -233,8 +233,13 @@ export const ChatWidget: React.FC = () => {
       };
     }
 
-    // 8. Repairs & Diagnosis
-    if (q.includes('repair') || q.includes('fix') || q.includes('screen') || q.includes('battery issue') || q.includes('fault') || q.includes('charge port')) {
+    // 8. Repairs & Diagnosis.
+    // Bare 'screen' used to sit here and caught "screen protector" (a phone
+    // accessory purchase) before it ever reached a real answer, confirmed
+    // live: it returned "sorry your device is broken" for a shopping
+    // question. 'broken screen'/'cracked screen'/'crack' below still catch
+    // genuine repair intent without the bare word.
+    if (q.includes('repair') || q.includes('fix') || q.includes('crack') || q.includes('broken screen') || q.includes('battery issue') || q.includes('fault') || q.includes('charge port')) {
       return {
         reply: "We provide 100% Free Diagnosis on every phone, laptop, and inverter! We diagnose the exact problem and quote you before any work starts. Most common repairs are finished same day with a 2-week warranty.",
         quickActions: [

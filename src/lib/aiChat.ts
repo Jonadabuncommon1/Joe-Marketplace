@@ -241,13 +241,22 @@ Which of these would work best for you?`;
     return `Yes, we deliver nationwide across Nigeria. Once you check out and confirm payment on WhatsApp, our team will confirm your delivery address and give you a timeline. If you'd rather not wait on delivery, you're also welcome to pick up from either branch after checkout.`;
   }
 
-  // 4. Contact
-  if (containsAny('contact', 'phone', 'whatsapp', 'call you', 'reach you', 'support', 'email')) {
+  // 4. Contact.
+  // Bare 'phone' used to sit in this list and, confirmed live, hijacked
+  // nearly every phone-related product question before it could reach the
+  // iPhone/Android rules below: "iphone", "smartphone", and "android
+  // phones" all contain it as a substring. 'call you'/'reach you' already
+  // covered genuine "how do I contact you" intent without it.
+  if (containsAny('contact', 'whatsapp', 'call you', 'reach you', 'support', 'email')) {
     return `You can reach our team directly by WhatsApp or call at 08133727813, by phone at 09071054193, or by email at ${site.email}. We're available Monday to Saturday, 8am to 6pm.`;
   }
 
-  // 5. Trending / new arrivals, dynamic from real products
-  if (containsAny('trending', 'trend', 'popular', 'hot', 'new arrival', 'new arrivals', 'latest', 'what\'s new')) {
+  // 5. Trending / new arrivals, dynamic from real products.
+  // 'hot' needs a word boundary: a plain substring check matched it inside
+  // "photography", "hotel", "shot" and the like, confirmed live when a
+  // completely unrelated gift-recommendation question got hijacked into a
+  // trending-products list instead of ever reaching Gemini.
+  if (containsAny('trending', 'trend', 'popular', 'new arrival', 'new arrivals', 'latest', 'what\'s new') || containsWord('hot')) {
     const trending = products.filter(p => p.isTrending || p.isNew).slice(0, 6);
     if (trending.length > 0) {
       let reply = `Here's what customers are asking for most right now:\n\n`;
@@ -270,8 +279,12 @@ Which of these would work best for you?`;
     }
   }
 
-  // 6. Repairs
-  if (containsAny('repair', 'fix', 'broken', 'crack', 'screen', 'battery', 'not charging', 'water damage', 'service my', 'maintenance')) {
+  // 6. Repairs.
+  // Bare 'screen' used to sit in this list and swallowed "screen protector"
+  // questions (a phone-accessories purchase, not a repair) before that rule
+  // ever got a turn. 'crack'/'broken' already cover "cracked/broken screen"
+  // repair intent without it.
+  if (containsAny('repair', 'fix', 'broken', 'crack', 'battery', 'not charging', 'water damage', 'service my', 'maintenance')) {
     return `Sorry to hear your device is giving you trouble, that's frustrating, but it's something we can sort out. We repair phones, laptops, tablets, gaming gear, inverters and solar systems. Diagnosis is always free, and most repairs are completed the same day. Head to the Repairs page (or tap the wrench icon below) for our price list and booking form, where you'll note the device, the fault, photos, your preferred branch, and whether you'd like to drop it off or have it picked up; it goes straight to WhatsApp or email from there. What device is it, and what's happening with it?`;
   }
 
@@ -348,7 +361,13 @@ export async function sendChatMessage(
 
   try {
     const genAI = new GoogleGenerativeAI(API_KEY.trim());
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Google retires dated model snapshots on a rolling basis - gemini-1.5-flash
+    // and its direct successor gemini-2.5-flash are both gone already, each
+    // confirmed by the API's own 404 when this was diagnosed. "-latest" is an
+    // alias Google keeps pointed at whatever their current fast model is (in
+    // production testing this resolved to gemini-3.8-flash), so this stops
+    // going stale every time they ship a new generation.
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
     const systemMsg = buildSystemPrompt(products);
 
@@ -376,6 +395,14 @@ export async function sendChatMessage(
     }
     if (msg.includes('quota') || msg.includes('QUOTA')) {
       return "I've reached my usage limit for the moment. Please try again in a few minutes, or reach our team directly on WhatsApp in the meantime.";
+    }
+    // Google's model genuinely being overloaded (HTTP 503, occasionally 429)
+    // used to fall into the network/adblocker branch below purely because the
+    // SDK's error is a TypeError, which told customers to disable Brave
+    // Shields or switch off their VPN for a problem that had nothing to do
+    // with their connection at all, confirmed live against the real API.
+    if (error?.status === 503 || error?.status === 429 || msg.includes('overloaded') || msg.includes('UNAVAILABLE') || msg.includes('try again later')) {
+      return "Our AI assistant is a little overloaded right now, that's on our end, not your connection. Please try again in a moment, or message our team directly on WhatsApp at 08133727813 if it's urgent.";
     }
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('Failed to fetch') || error instanceof TypeError) {
       return `I'm having trouble connecting right now. This is usually caused by an adblocker (such as Brave Shields or uBlock Origin) blocking the connection, or a VPN or restrictive network. If you're on Brave, try turning off Shields for this site; otherwise, an incognito window or mobile data connection usually resolves it.
