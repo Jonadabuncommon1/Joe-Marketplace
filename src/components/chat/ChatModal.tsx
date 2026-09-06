@@ -9,6 +9,7 @@ import { useAppContext } from '../../store/AppContext';
 import { branches, contacts, site, waLink } from '../../config/site';
 import { formatPrice } from '../../data';
 import { Product } from '../../types';
+import { sendChatMessage, ChatMessage } from '../../lib/aiChat';
 
 interface Message {
   id: string;
@@ -25,9 +26,17 @@ export const ChatWidget: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Derive latest uploads and featured products from live context
+  // Derive latest uploads from live context, sorted explicitly by real
+  // upload time rather than trusting the array's incoming order. It used to
+  // be `[...products].reverse()`, which silently returned the 4 OLDEST
+  // products: `products` already arrives newest-first from Supabase, so
+  // reversing it put the oldest at the front, exactly backwards for a
+  // "recent uploads" answer.
   const recentProducts = useMemo(() => {
-    return [...products].reverse().slice(0, 4);
+    return [...products]
+      .filter((p) => p.created_at)
+      .sort((a, b) => new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime())
+      .slice(0, 4);
   }, [products]);
 
   const openCategory = (id: string) => {
@@ -43,7 +52,10 @@ export const ChatWidget: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
-  const generateCiscoResponse = (userText: string): { reply: string; quickActions?: { label: string; action: () => void }[] } => {
+  // Returns null when nothing local matches, rather than a canned "I'm
+  // listening!" line every time, so the caller can escalate to a real,
+  // conversational answer instead of repeating the same fallback forever.
+  const generateCiscoResponse = (userText: string): { reply: string; quickActions?: { label: string; action: () => void }[] } | null => {
     const q = userText.toLowerCase().trim();
 
     // 1. Recent Uploads / What's New / Latest Arrivals
@@ -55,7 +67,13 @@ export const ChatWidget: React.FC = () => {
       q.includes('new upload') ||
       q.includes('what is new') ||
       q.includes("what's new") ||
-      q.includes('fresh stock')
+      q.includes('fresh stock') ||
+      q.includes('on your product') ||
+      q.includes('what do you have today') ||
+      q.includes('what do you have now') ||
+      q.includes('just added') ||
+      q.includes('just uploaded') ||
+      q.includes('just dropped')
     ) {
       if (recentProducts.length === 0) {
         return {
@@ -120,7 +138,14 @@ export const ChatWidget: React.FC = () => {
       };
     }
 
-    if (q === 'hello' || q === 'hi' || q === 'hey' || q === 'good day' || q === 'good morning' || q === 'good afternoon') {
+    // Loosened from exact-equality: that meant "hello there" or "hi Cisco!"
+    // fell all the way through to the generic fallback instead of getting a
+    // greeting back. Guarded to short messages so "hi, how much is the
+    // iPhone 15" still gets treated as the real question it is.
+    const isGreeting =
+      q.length <= 20 &&
+      /\b(hello|hi|hey|good day|good morning|good afternoon|good evening|howdy|yo)\b/.test(q);
+    if (isGreeting) {
       const greetings = [
         "Hello! Great to have you at Joe Tech. Looking for a new phone, laptop, solar gear, or repair assistance?",
         "Hey! Cisco here. We have fresh tech stock on the shelves today. How can I help?",
@@ -252,18 +277,21 @@ export const ChatWidget: React.FC = () => {
       };
     }
 
-    // Fallback
-    return {
-      reply: `I'm listening! You can ask about our latest uploads, specific device prices (e.g. "MacBook Pro", "iPhone 13"), or our free repair service. What would you like to explore?`,
-      quickActions: [
-        { label: '✨ What’s New?', action: () => handleSend("What are the latest products uploaded?") },
-        { label: '🛍️ Browse Store', action: () => { setCurrentView('categories'); setIsOpen(false); } },
-        { label: '💬 Talk to Agent', action: () => window.open(waLink(`Hello Joe Tech, I am asking about: ${userText}`), '_blank') },
-      ],
-    };
+    // No local rule matched, nothing to return here, handleSend escalates
+    // this to a real conversational answer instead of a repeated canned line.
+    return null;
   };
 
-  const handleSend = (textToSend?: string) => {
+  // Generic quick actions offered alongside a Gemini-generated reply, since
+  // that path only produces text, not the category/product jump buttons the
+  // local rules attach.
+  const fallbackQuickActions = (userText: string) => [
+    { label: '✨ What’s New?', action: () => handleSend("What are the latest products uploaded?") },
+    { label: '🛍️ Browse Store', action: () => { setCurrentView('categories'); setIsOpen(false); } },
+    { label: '💬 Talk to Agent', action: () => window.open(waLink(`Hello Joe Tech, I am asking about: ${userText}`), '_blank') },
+  ];
+
+  const handleSend = async (textToSend?: string) => {
     const query = (textToSend || input).trim();
     if (!query) return;
 
@@ -274,22 +302,31 @@ export const ChatWidget: React.FC = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
+    const history: ChatMessage[] = messages
+      .filter((m) => m.id !== 'welcome')
+      .map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }));
+
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const response = generateCiscoResponse(query);
-      const ciscoMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'cisco',
-        text: response.reply,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        quickActions: response.quickActions,
-      };
-      setMessages((prev) => [...prev, ciscoMessage]);
-      setIsTyping(false);
-    }, 550);
+    // A local rule answers instantly with no network round trip; only a
+    // message nothing local recognizes pays the cost of a real AI call.
+    const local = generateCiscoResponse(query);
+    const response = local ?? {
+      reply: await sendChatMessage(query, history, products),
+      quickActions: fallbackQuickActions(query),
+    };
+
+    const ciscoMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      sender: 'cisco',
+      text: response.reply,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      quickActions: response.quickActions,
+    };
+    setMessages((prev) => [...prev, ciscoMessage]);
+    setIsTyping(false);
   };
 
   const [messages, setMessages] = useState<Message[]>([

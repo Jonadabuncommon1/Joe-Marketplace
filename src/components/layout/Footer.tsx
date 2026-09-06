@@ -75,7 +75,7 @@ export const Footer = () => {
     >
       <BackgroundIcons />
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-3 lg:gap-8">
+        <div className="mb-10 grid grid-cols-1 gap-y-10 gap-x-8 md:grid-cols-3 md:gap-y-8 lg:gap-8">
           <div>
             <div className="mb-4 flex items-center">
               <LogoLockup className="h-20 md:h-24" />
@@ -106,7 +106,10 @@ export const Footer = () => {
             </ul>
           </div>
 
-          <div>
+          {/* A visible rule ahead of Support on mobile, where this column
+              stacks directly under Categories, so the last category and the
+              Support heading never read as one running list. */}
+          <div className="border-t border-jt-ink/8 pt-8 dark:border-white/10 md:border-0 md:pt-0">
             <h3 className="mb-4 font-sans text-xs font-bold uppercase tracking-widest text-jt-blue dark:text-jt-mint">
               Support
             </h3>

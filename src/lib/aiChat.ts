@@ -16,7 +16,7 @@ function buildSystemPrompt(products: Product[]): string {
     `- ${p.name} (${p.category}): ${formatPrice(p.price)}${p.description ? ' - ' + p.description : ''}${p.isNew ? ' [NEW]' : ''}${p.isTrending ? ' [TRENDING]' : ''}${p.inStock === false ? ' [OUT OF STOCK]' : ' [In stock]'}`
   ).join('\n');
 
-  return `You are "Joe", the shopping assistant for Joe Tech - a gadget retailer selling iPhones and iPads, Android phones, laptops and tablets, phone and laptop accessories, gaming monitors/chairs/tables, and solar power systems, with a repair and maintenance service.
+  return `You are "Cisco", the shopping assistant for Joe Tech - a gadget retailer selling iPhones and iPads, Android phones, laptops and tablets, phone and laptop accessories, gaming monitors/chairs/tables, and solar power systems, with a repair and maintenance service.
 
 The inventory list below is live, it reflects the store's current stock right now, including anything just added, re-priced, or marked out of stock by the team. Always answer availability and stock questions from this list, never from memory of an earlier conversation.
 
@@ -145,6 +145,64 @@ function findPredefinedAnswer(message: string, products: Product[]): string | nu
   }
 
   const containsAny = (...words: string[]) => words.some(word => normalized.includes(word));
+  // Word-boundary version for short greeting words ("hi", "hey") that would
+  // otherwise false-positive as substrings of ordinary words ("shipping",
+  // "they").
+  const containsWord = (...words: string[]) =>
+    words.some((word) => new RegExp(`\\b${word}\\b`).test(normalized));
+
+  // -1. Greetings and small talk. Checked first and answered instantly, with
+  // no dependency on the Gemini connection, so "hello" never falls through to
+  // a generic fallback line just because the API key is missing or rate
+  // limited, the one thing customers notice most.
+  if (containsAny('good morning', 'good afternoon', 'good evening', 'good day', 'goodmorning')) {
+    return `Good day to you too! 👋 I'm Cisco, your Joe Tech assistant, doing well and ready to help. What are you shopping for today, phones, laptops, gaming gear, solar power, or a repair?`;
+  }
+  if (containsAny('how are you', 'how far', 'hows it going', "how's it going", 'how you dey', 'how you doing')) {
+    return `I'm doing great, thanks for asking! 😊 What can I help you with, are you looking for something specific, or just browsing what's available?`;
+  }
+  // Guarded by length: a bare "hi"/"hello" is almost always short, while
+  // "hi, how much is the iPhone 15" also contains "hi" but is a real
+  // question that deserves a real answer, not just a greeting back.
+  const isShortMessage = normalized.length <= 20;
+  if (isShortMessage && (containsAny('hello', 'hello there', 'hiya') || containsWord('hi', 'hey', 'yo', 'howdy'))) {
+    return `Hello! 👋 I'm Cisco, your Joe Tech assistant, and I'm well, thank you! I'm synced with our real stock, so ask me what we have today, prices, store locations, or how to book a free repair diagnosis. What can I do for you?`;
+  }
+  if (containsAny('thank you', 'thanks', 'thank u', 'thankyou', 'i appreciate', 'appreciate it')) {
+    return `You're very welcome! Let me know if there's anything else, prices, availability, or how to place an order, I'm happy to help.`;
+  }
+  if (containsWord('bye', 'goodbye') || containsAny('see you', 'talk later')) {
+    return `Take care! Come back anytime you have a question, or reach the team directly on WhatsApp at 08133727813 if it's urgent. 👋`;
+  }
+
+  // -0.5. Recently uploaded / "what's new today", genuinely sorted by real
+  // upload time so the answer changes the moment something new goes live,
+  // rather than depending on the admin remembering to tick "New"/"Trending".
+  if (
+    containsAny(
+      'just added', 'just uploaded', 'newly added', 'new stock', 'just now',
+      'uploaded', 'just dropped', 'just came in', 'newly arrived',
+      'recently added', 'recently uploaded', 'added recently', 'uploaded recently',
+      'recent upload', 'recent addition', 'latest upload', 'latest addition',
+      'what do you have today', 'what do you have now', "what's new today",
+      "what's on your product", 'whats on your product', "today's stock", 'todays stock',
+    )
+  ) {
+    const recentlyUploaded = products
+      .filter((p) => p.created_at)
+      .sort((a, b) => new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime())
+      .slice(0, 6);
+    if (recentlyUploaded.length > 0) {
+      let reply = `Here's what we've added most recently:\n\n`;
+      recentlyUploaded.forEach((p) => {
+        reply += `- **${p.name}** (${p.category}) - **${formatPrice(p.price)}**${p.inStock === false ? ' _(currently out of stock)_' : ''}\n`;
+      });
+      reply += `\nWant more detail on any of these, or is there something specific you're after?`;
+      return reply;
+    }
+    // No timestamped uploads yet, fall through to the general answers below
+    // rather than claiming a "recent" list that isn't real.
+  }
 
   // Lowest / highest price
   if (containsAny('lowest price', 'cheapest', 'minimum price', 'least expensive', 'lowest')) {
@@ -254,7 +312,7 @@ Which of these would work best for you?`;
   }
 
   // 15. General categories / inventory
-  if (containsAny('sell', 'have', 'products', 'category', 'categories', 'items', 'inventory', 'stock', 'what do you do')) {
+  if (containsAny('sell', 'have', 'product', 'products', 'category', 'categories', 'item', 'items', 'inventory', 'stock', 'what do you do')) {
     const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
     const catList = cats.length > 0
       ? cats.map(c => `- **${c}**`).join('\n')
@@ -285,7 +343,7 @@ export async function sendChatMessage(
   const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
   if (!API_KEY || API_KEY.trim() === '') {
-    return "I'm Joe, here to help you find what you need. Feel free to browse our categories, add items to your cart and check out, or reach our team directly on WhatsApp if you'd rather speak with someone.";
+    return "I'm Cisco, here to help you find what you need. Feel free to browse our categories, add items to your cart and check out, or reach our team directly on WhatsApp if you'd rather speak with someone.";
   }
 
   try {
@@ -298,12 +356,12 @@ export async function sendChatMessage(
     let promptString = `[SYSTEM INSTRUCTIONS]\n${systemMsg}\n\n[CONVERSATION HISTORY]\n`;
 
     for (const msg of history) {
-      const speaker = msg.role === 'assistant' ? 'Joe' : 'User';
+      const speaker = msg.role === 'assistant' ? 'Cisco' : 'User';
       promptString += `${speaker}: ${msg.content}\n\n`;
     }
 
     // Add the final prompt for the assistant to reply
-    promptString += `Joe: `;
+    promptString += `Cisco: `;
 
     const result = await model.generateContent(promptString);
     const text = result.response.text();
@@ -314,7 +372,7 @@ export async function sendChatMessage(
     const msg = error?.message || '';
 
     if (msg.includes('API_KEY') || msg.includes('api key') || msg.includes('API key')) {
-      return "I'm Joe, here to help you find what you need. Feel free to browse our categories, add items to your cart and check out, or reach our team directly on WhatsApp if you'd rather speak with someone.";
+      return "I'm Cisco, here to help you find what you need. Feel free to browse our categories, add items to your cart and check out, or reach our team directly on WhatsApp if you'd rather speak with someone.";
     }
     if (msg.includes('quota') || msg.includes('QUOTA')) {
       return "I've reached my usage limit for the moment. Please try again in a few minutes, or reach our team directly on WhatsApp in the meantime.";

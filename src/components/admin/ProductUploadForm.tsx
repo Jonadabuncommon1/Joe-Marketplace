@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag, Ban, CheckCircle2, Link2, Clipboard, MapPin } from 'lucide-react';
+import { X, UploadCloud, Loader2, Flame, Zap, Tag, Ban, CheckCircle2, Link2, Clipboard, MapPin } from 'lucide-react';
 import { marketplaceCategories } from '../../data';
 import { uploadImage } from '../../lib/supabase';
 import { useAppContext } from '../../store/AppContext';
@@ -14,7 +14,6 @@ export type FormState = {
   condition: string;
   isHot: boolean;
   isTrending: boolean;
-  isFeatured: boolean;
   isNew: boolean;
   badge: string;
   colors: string[];
@@ -52,7 +51,6 @@ export const emptyForm = (): FormState => ({
   condition: 'UK Used',
   isHot: false,
   isTrending: false,
-  isFeatured: false,
   isNew: false,
   badge: '',
   colors: [],
@@ -176,7 +174,6 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
         condition: form.condition,
         isHot: form.isHot,
         isTrending: form.isTrending,
-        isFeatured: form.isFeatured,
         isNew: form.isNew,
         badge: form.badge.trim() || undefined,
         colors: form.colors.length > 0 ? form.colors : undefined,
@@ -392,7 +389,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
                 Storefront Placements
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 dark:bg-[#15171e] border border-gray-200 dark:border-white/10 p-4 rounded-xl shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 dark:bg-[#15171e] border border-gray-200 dark:border-white/10 p-4 rounded-xl shadow-sm">
                 <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer p-2 rounded-lg hover:bg-amber-500/10 transition-colors">
                   <input
                     type="checkbox"
@@ -414,18 +411,6 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
                   />
                   <span className="flex items-center gap-1 text-purple-700 dark:text-purple-400">
                     <Zap size={14} /> Trending
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer p-2 rounded-lg hover:bg-blue-500/10 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={form.isFeatured}
-                    onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
-                    <Star size={14} /> Featured
                   </span>
                 </label>
               </div>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Flame, Zap, Star, Ban, CheckCircle2, MapPin } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Flame, Zap, Ban, CheckCircle2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAppContext } from '../../store/AppContext';
 import { formatPrice } from '../../data';
@@ -16,7 +16,6 @@ export interface AdminProduct {
   condition?: string;
   isHot?: boolean;
   isTrending?: boolean;
-  isFeatured?: boolean;
   isNew?: boolean;
   badge?: string;
   colors?: string[];
@@ -107,7 +106,6 @@ export const ProductsManager = () => {
       condition: product.condition || 'UK Used',
       isHot: !!product.isHot,
       isTrending: !!product.isTrending,
-      isFeatured: !!product.isFeatured,
       isNew: !!product.isNew,
       badge: product.badge || '',
       colors: product.colors || [],
@@ -242,7 +240,7 @@ export const ProductsManager = () => {
                   </div>
                 </div>
 
-                {(product.isHot || product.isTrending || product.isFeatured || product.badge) && (
+                {(product.isHot || product.isTrending || product.badge) && (
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {product.isHot && (
                       <span className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
@@ -252,11 +250,6 @@ export const ProductsManager = () => {
                     {product.isTrending && (
                       <span className="inline-flex items-center gap-1 rounded border border-purple-300 bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-900 dark:border-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                         <Zap size={10} /> TRENDING
-                      </span>
-                    )}
-                    {product.isFeatured && (
-                      <span className="inline-flex items-center gap-1 rounded border border-blue-300 bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-900 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                        <Star size={10} /> FEATURED
                       </span>
                     )}
                     {product.badge && (
@@ -369,17 +362,12 @@ export const ProductsManager = () => {
                             <Zap size={10} /> TRENDING
                           </span>
                         )}
-                        {product.isFeatured && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-300 rounded border border-blue-300 dark:border-blue-700">
-                            <Star size={10} /> FEATURED
-                          </span>
-                        )}
                         {product.badge && (
                           <span className="px-2 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded border dark:border-gray-700">
                             {product.badge}
                           </span>
                         )}
-                        {!product.isHot && !product.isTrending && !product.isFeatured && !product.badge && (
+                        {!product.isHot && !product.isTrending && !product.badge && (
                           <span className="text-gray-400 text-xs">Standard</span>
                         )}
                       </div>

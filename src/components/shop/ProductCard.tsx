@@ -41,7 +41,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.3 }}
-      className="group relative flex flex-col justify-between cursor-pointer rounded-2xl border border-jt-ink/10 bg-white p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-jt-blue/40 hover:shadow-xl hover:shadow-jt-blue/10 dark:border-white/10 dark:bg-jt-ink/50"
+      className="group relative flex flex-col justify-between overflow-hidden cursor-pointer rounded-2xl border border-jt-ink/10 bg-white p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-jt-blue/40 hover:shadow-xl hover:shadow-jt-blue/10 dark:border-white/10 dark:bg-jt-ink/50"
       onClick={handleView}
     >
       <div>
@@ -139,8 +139,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
 
       {/* Pricing & Stock Footer */}
-      <div className="mt-3 flex items-center justify-between border-t border-jt-ink/5 px-1 pt-2.5 dark:border-white/5">
-        <p className="flex items-baseline gap-1.5">
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-jt-ink/5 px-1 pt-2.5 dark:border-white/5">
+        {/* min-w-0 lets this shrink/wrap instead of forcing the row wider than
+            the card, which used to push "In Stock" out past the right edge
+            whenever a discounted price made the pair too wide for one line. */}
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
           <span className="font-tech text-base font-bold text-jt-blue dark:text-jt-mint">
             {formatPrice(product.price)}
           </span>
@@ -152,11 +155,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </p>
 
         {outOfStock ? (
-          <span className="text-[11px] font-medium text-red-600 dark:text-red-400">
+          <span className="shrink-0 whitespace-nowrap text-[11px] font-medium text-red-600 dark:text-red-400">
             Out of Stock
           </span>
         ) : (
-          <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+          <span className="shrink-0 whitespace-nowrap text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
             In Stock
           </span>
         )}

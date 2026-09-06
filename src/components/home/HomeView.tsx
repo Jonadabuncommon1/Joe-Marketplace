@@ -111,78 +111,6 @@ const SectionHeading: React.FC<{
 );
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* Staggered Slot-Machine Reel Card Component                                 */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-const ReelSlotCard = memo<{
-  pool: Product[];
-  startIndex: number;
-  staggerDelay: number;
-  onOpen: (p: Product) => void;
-}>(({ pool, startIndex, staggerDelay, onOpen }) => {
-  const [currentIndex, setCurrentIndex] = useState(startIndex % (pool.length || 1));
-
-  useEffect(() => {
-    if (pool.length <= 1) return;
-    const timeout = setTimeout(() => {
-      const interval = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % pool.length);
-      }, 2400);
-      return () => clearInterval(interval);
-    }, staggerDelay);
-
-    return () => clearTimeout(timeout);
-  }, [pool.length, staggerDelay]);
-
-  const product = pool[currentIndex];
-  if (!product) return null;
-
-  return (
-    <div className="relative h-[210px] sm:h-[240px] w-full overflow-hidden rounded-2xl border border-jt-ink/10 bg-white shadow-sm dark:border-white/10 dark:bg-jt-ink-soft/60">
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.button
-          key={product.id}
-          type="button"
-          onClick={() => onOpen(product)}
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: '0%', opacity: 1 }}
-          exit={{ y: '-100%', opacity: 0 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="focus-ring group absolute inset-0 flex h-full w-full flex-col text-left"
-        >
-          <div className="relative aspect-[4/3] w-full overflow-hidden bg-jt-paper/50 dark:bg-white/5">
-            <ProductImage
-              src={product.images?.[0]}
-              alt={product.name}
-              icon={product.icon}
-              seed={product.id}
-              iconClassName="h-12 w-12 sm:h-14 sm:w-14 transition-transform duration-500 group-hover:scale-110"
-            />
-            {product.condition && (
-              <span className="absolute left-2.5 top-2.5 rounded-full bg-jt-ink/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur">
-                {product.condition}
-              </span>
-            )}
-            <span className="absolute right-2.5 top-2.5 flex h-2 w-2 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-jt-mint opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-jt-mint" />
-            </span>
-          </div>
-          <div className="flex flex-1 flex-col justify-center p-3">
-            <p className="line-clamp-1 text-xs font-semibold text-jt-ink dark:text-white sm:text-sm">
-              {product.name}
-            </p>
-            <p className="mt-1 font-tech text-xs sm:text-sm font-bold text-jt-blue dark:text-jt-mint">
-              {formatPrice(product.price)}
-            </p>
-          </div>
-        </motion.button>
-      </AnimatePresence>
-    </div>
-  );
-});
-
-/* ────────────────────────────────────────────────────────────────────────── */
 /* 3D Flip Card for Hot Deals. Purely presentational, the parent Hero owns    */
 /* the shared rotation index so every slot advances together and the dot     */
 /* indicators below the grid mean something.                                 */
@@ -617,7 +545,7 @@ export const HomeView: React.FC = () => {
     [setActiveCategory, setCurrentView],
   );
 
-  const { available, featured, hiddenTrendingCount, categoryCounts, hotDeals, featuredPicks } = useMemo(() => {
+  const { available, featured, hiddenTrendingCount, categoryCounts, hotDeals } = useMemo(() => {
     // The homepage's auto-rotating promo rails (Hot Deals, Trending, the
     // category "N in stock" counts) all draw from what a shopper can
     // actually buy right now, an item marked out of stock is left out
@@ -643,9 +571,6 @@ export const HomeView: React.FC = () => {
       categoryCounts: counts,
       // Capped at 8, two dot-pages of four, rather than the whole catalog.
       hotDeals: dealsPool.slice(0, 8),
-      // Admin's "Featured" checkbox on a product, a hand-picked spotlight
-      // distinct from the algorithmic Trending/Hot rails above.
-      featuredPicks: available.filter((p) => p.isFeatured).slice(0, 4),
     };
   }, [products]);
 
@@ -666,33 +591,6 @@ export const HomeView: React.FC = () => {
         hotDeals={hotDeals}
         onOpenProduct={openProduct}
       />
-
-      {/* ── Staggered Slot-Machine Reel Section ── */}
-      <Section className="py-8 sm:py-12">
-        <div className="mx-auto w-full max-w-7xl px-3.5 sm:px-6">
-          <SectionHeading
-            eyebrow="Live inventory"
-            title={
-              <>
-                Fresh stock, <span className="text-shine">rolling live</span>
-              </>
-            }
-            subtitle="Real-time stock reel. Watch slots switch automatically every few seconds or tap to view."
-          />
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-            {[0, 1, 2, 3].map((slotIndex) => (
-              <ReelSlotCard
-                key={slotIndex}
-                pool={available}
-                startIndex={slotIndex * 2}
-                staggerDelay={slotIndex * 300}
-                onOpen={openProduct}
-              />
-            ))}
-          </div>
-        </div>
-      </Section>
 
       {/* ── Categories Grid ── */}
       <Section className="bg-white py-8 dark:bg-jt-ink-soft/30 sm:py-14">
@@ -796,28 +694,6 @@ export const HomeView: React.FC = () => {
                   </span>
                 </motion.button>
               )}
-            </div>
-          </div>
-        </Section>
-      )}
-
-      {/* ── Featured Picks (admin's "Featured" checkbox) ── */}
-      {featuredPicks.length > 0 && (
-        <Section className="bg-white py-8 dark:bg-jt-ink-soft/30 sm:py-14">
-          <div className="mx-auto w-full max-w-7xl px-3.5 sm:px-6">
-            <SectionHeading
-              eyebrow="Handpicked"
-              title={
-                <>
-                  Staff <span className="text-shine">favorites</span>
-                </>
-              }
-              subtitle="A few we're personally vouching for this week."
-            />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {featuredPicks.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
             </div>
           </div>
         </Section>
