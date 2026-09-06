@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import toast from 'react-hot-toast';
 import { useAppContext } from '../../store/AppContext';
 import { formatPrice } from '../../data';
-import { Ban, Heart, ChevronRight, MessageCircle, Star, ShoppingBag, ShieldCheck, Truck, Minus, Plus, ArrowLeft } from 'lucide-react';
+import { site } from '../../config/site';
+import { Ban, Heart, ChevronRight, MessageCircle, Share2, Star, ShoppingBag, ShieldCheck, Truck, Minus, Plus, ArrowLeft } from 'lucide-react';
 
 export const ProductDetailView = () => {
   const { activeProductId, setCurrentView, goBack, addToCart, wishlist, toggleWishlist, getProductById, user } = useAppContext();
@@ -72,6 +74,36 @@ export const ProductDetailView = () => {
 
     const url = `https://wa.me/2348133727813?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${site.url}/product?id=${product.id}`;
+    const shareData = {
+      title: product.name,
+      text: `Check out ${product.name} on Joe Tech — ${formatPrice(product.price)}`,
+      url: shareUrl,
+    };
+
+    // navigator.share is mobile-only in most browsers, so desktop falls back
+    // to putting the link on the clipboard instead.
+    if (navigator.share && navigator.canShare?.(shareData) !== false) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // AbortError just means the user closed the share sheet, not a failure.
+        if ((err as Error)?.name !== 'AbortError') {
+          toast.error('Could not open the share sheet. Try again.');
+        }
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Link copied — paste it anywhere to share this product.');
+    } catch {
+      toast.error('Could not copy the link. Copy it from the address bar instead.');
+    }
   };
 
   return (
@@ -295,13 +327,21 @@ export const ProductDetailView = () => {
                   {outOfStock ? <Ban size={18} /> : <ShoppingBag size={18} />}
                   <span>{outOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
                 </button>
-                <button 
+                <button
                   onClick={() => toggleWishlist(product.id)}
                   className={`h-14 w-full sm:w-16 rounded-xl border flex items-center justify-center transition-colors ${
                     isWishlisted ? 'border-[#3626a7] brand-text bg-[#3626a7]/10 shadow-[0_0_15px_rgba(236,72,153,0.2)]' : 'border-gray-200 text-gray-400 dark:text-gray-800 dark:text-white hover:border-[#3626a7]/50 hover:brand-text glass'
                   }`}
                 >
                   <Heart size={20} className={isWishlisted ? "fill-current" : ""} />
+                </button>
+                <button
+                  onClick={handleShare}
+                  title="Share this product"
+                  aria-label="Share this product"
+                  className="h-14 w-full sm:w-16 rounded-xl border border-gray-200 text-gray-400 dark:text-gray-800 dark:text-white hover:border-[#3626a7]/50 hover:brand-text glass flex items-center justify-center transition-colors"
+                >
+                  <Share2 size={20} />
                 </button>
               </div>
               

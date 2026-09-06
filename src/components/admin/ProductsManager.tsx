@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Flame, Zap, Star, Ban, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Flame, Zap, Star, Ban, CheckCircle2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAppContext } from '../../store/AppContext';
 import { formatPrice } from '../../data';
@@ -21,6 +21,7 @@ export interface AdminProduct {
   badge?: string;
   colors?: string[];
   inStock?: boolean;
+  location?: string;
   created_at?: string;
   createdAt?: string;
   [key: string]: any;
@@ -111,6 +112,7 @@ export const ProductsManager = () => {
       badge: product.badge || '',
       colors: product.colors || [],
       inStock: product.inStock !== false,
+      location: product.location || '',
     });
     setIsModalOpen(true);
   };
@@ -229,6 +231,11 @@ export const ProductsManager = () => {
                       {product.category}
                       {product.condition ? ` · ${product.condition}` : ''}
                     </p>
+                    {product.location && (
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                        <MapPin size={11} /> {product.location}
+                      </p>
+                    )}
                     <p className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
                       {formatPrice(product.price)}
                     </p>
@@ -339,7 +346,14 @@ export const ProductsManager = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">{product.category}</td>
+                    <td className="px-6 py-4">
+                      <div>{product.category}</div>
+                      {product.location && (
+                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                          <MapPin size={11} /> {product.location}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-bold text-gray-900 dark:text-gray-100">
                       {formatPrice(product.price)}
                     </td>

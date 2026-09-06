@@ -4,6 +4,7 @@ import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { WhatsAppCart } from './components/WhatsAppCart';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
+import { UrgentWhatsAppBanner } from './components/home/UrgentWhatsAppBanner';
 import { Toaster } from 'react-hot-toast';
 import { SplashScreen } from './components/SplashScreen';
 
@@ -43,6 +44,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-900 dark:text-gray-100 bg-transparent dark:bg-black overflow-x-hidden selection:bg-[#3626a7]/10 transition-colors duration-500 relative">
+      {currentView === 'home' && <UrgentWhatsAppBanner />}
       {currentView !== 'auth' && <Navbar />}
       <main className="flex-grow w-full">
         <React.Suspense fallback={<LoadingView />}>

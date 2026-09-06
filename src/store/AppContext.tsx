@@ -113,6 +113,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const handlePopState = (event: PopStateEvent) => {
       if (event.state && event.state.view) {
         _setCurrentView(event.state.view);
+        // A shared product link carries its id as ?id=, which lives outside
+        // history.state, so restore it here too or Back/Forward between two
+        // shared links would keep showing whichever product loaded first.
+        if (event.state.view === 'product') {
+          setActiveProductId(new URLSearchParams(window.location.search).get('id'));
+        }
         setViewHistory((h) => {
           if (h.length > 0) {
             const newHistory = [...h];
@@ -127,14 +133,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const validViews: ViewState[] = ['home', 'shop', 'categories', 'category', 'product', 'cart', 'checkout', 'wishlist', 'about', 'contact', 'services', 'admin', 'terms', 'privacy', 'auth'];
         const view = validViews.includes(path) ? path : 'home';
         _setCurrentView(view);
+        if (view === 'product') {
+          setActiveProductId(new URLSearchParams(window.location.search).get('id'));
+        }
         setViewHistory([]);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
-  const [activeProductId, setActiveProductId] = useState<string | null>(null);
+
+  // A shared product link is `/product?id=<id>`, so a fresh, cold load needs
+  // to pick the id up from the query string before the first paint.
+  const [activeProductId, setActiveProductId] = useState<string | null>(() => {
+    if (typeof window === 'undefined' || getInitialView() !== 'product') return null;
+    return new URLSearchParams(window.location.search).get('id');
+  });
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  // Keep `?id=` in the address bar in sync with whatever product is open, so
+  // the link in the bar (or copied via Share) always reopens the same one.
+  // A separate effect rather than threading activeProductId through
+  // setCurrentView, since the two are set independently at the call sites
+  // (e.g. ProductCard sets the id, then navigates). replaceState, not
+  // pushState: the navigation to 'product' already added its own history
+  // entry, this only fills in the id on that same entry.
+  useEffect(() => {
+    if (currentView !== 'product') return;
+    const url = activeProductId ? `/product?id=${activeProductId}` : '/product';
+    if (window.location.pathname + window.location.search !== url) {
+      window.history.replaceState({ view: 'product' }, '', url);
+    }
+  }, [currentView, activeProductId]);
   // Cart and wishlist survive a refresh, losing a full cart to an accidental
   // reload is the fastest way to lose a sale.
   const [cart, setCart] = useState<CartItem[]>(() => readStored<CartItem[]>(CART_KEY, []));

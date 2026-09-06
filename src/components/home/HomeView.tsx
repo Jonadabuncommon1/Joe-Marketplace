@@ -299,7 +299,10 @@ const Hero: React.FC<{
   }, [dealPageCount, reduceMotion, dealsPaused]);
 
   return (
-    <section className="relative w-full max-w-full overflow-hidden bg-jt-paper pb-8 pt-20 text-jt-ink dark:bg-jt-ink dark:text-white sm:pb-14 sm:pt-26">
+    // pt-29/sm:pt-35 = the old pt-20/sm:pt-26 plus UrgentWhatsAppBanner's
+    // height (h-9), which now pushes the fixed Navbar down by the same
+    // amount on this page — see the comment on Navbar's top offsets.
+    <section className="relative w-full max-w-full overflow-hidden bg-jt-paper pb-8 pt-29 text-jt-ink dark:bg-jt-ink dark:text-white sm:pb-14 sm:pt-35">
       <div className="relative mx-auto w-full max-w-7xl px-3.5 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
           {/* Main Column */}

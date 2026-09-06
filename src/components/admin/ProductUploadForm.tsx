@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag, Ban, CheckCircle2, Link2, Clipboard } from 'lucide-react';
+import { X, UploadCloud, Loader2, Flame, Zap, Star, Tag, Ban, CheckCircle2, Link2, Clipboard, MapPin } from 'lucide-react';
 import { marketplaceCategories } from '../../data';
 import { uploadImage } from '../../lib/supabase';
 import { useAppContext } from '../../store/AppContext';
@@ -19,7 +19,12 @@ export type FormState = {
   badge: string;
   colors: string[];
   inStock: boolean;
+  /** Which branch has this item: 'Nsukka' or 'Lagos', or '' for older rows
+   *  uploaded before this field existed. */
+  location: string;
 };
+
+export const PRODUCT_LOCATIONS = ['Nsukka', 'Lagos'] as const;
 
 export const AVAILABLE_COLORS = [
   'Space Grey',
@@ -52,6 +57,7 @@ export const emptyForm = (): FormState => ({
   badge: '',
   colors: [],
   inStock: true,
+  location: '',
 });
 
 interface ProductUploadFormProps {
@@ -175,6 +181,7 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
         badge: form.badge.trim() || undefined,
         colors: form.colors.length > 0 ? form.colors : undefined,
         inStock: form.inStock,
+        location: form.location || undefined,
       };
 
       if (editingId) {
@@ -320,6 +327,33 @@ export const ProductUploadForm: React.FC<ProductUploadFormProps> = ({
                   Shoppers will see an Out of Stock badge and cannot add this to cart until you switch it back.
                 </p>
               )}
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Location
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {PRODUCT_LOCATIONS.map((loc) => (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setForm({ ...form, location: loc })}
+                    className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${
+                      form.location === loc
+                        ? 'border-[#3626a7] bg-[#3626a7]/10 text-[#3626a7] dark:border-[#6b58ea] dark:bg-[#6b58ea]/10 dark:text-[#6b58ea]'
+                        : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-[#3626a7]/40 dark:border-white/10 dark:bg-[#1a1a1a] dark:text-gray-400'
+                    }`}
+                  >
+                    <MapPin size={16} />
+                    {loc}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Which branch this item is at. Shown on the product page so buyers know where it is.
+              </p>
             </div>
 
             {/* Pricing */}
